@@ -9,20 +9,16 @@ let activate = context => {
   Kakoune.writeToKak->Kakoune.initKak
 
   Vscode.overrideTypeCommand(context, Kakoune.writeToKak)
-  Vscode.setCursorStyle(Vscode.TextEditor.Block)
-  Vscode.Commands.registerCommand("extension.send_escape", () => {
-    Rpc.createKeysMessage("<esc>")->Rpc.stringifyMessage->Kakoune.writeToKak
-    Kakoune.querySelections()
-  })
+  Vscode.Commands.registerCommand("extension.send_escape", () => Kakoune.writeKeys("<esc>"))
   ->Js.Array.push(context.subscriptions)
   ->ignore
+
   Vscode.Commands.registerCommand("extension.send_backspace", () => {
     switch Mode.getMode() {
     | Mode.Insert => Vscode.Commands.executeCommand("deleteLeft")
     | _ => ()
     }
-
-    Rpc.createKeysMessage("<backspace>")->Rpc.stringifyMessage->Kakoune.writeToKak
+    Kakoune.writeKeys("<backspace>")
   })
   ->Js.Array.push(context.subscriptions)
   ->ignore
