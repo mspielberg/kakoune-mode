@@ -207,7 +207,7 @@ module Selection = {
   }
 }
 
-let initKak = writeToKak => Rpc.maxResizeMessage->writeToKak
+let initKak = writeToKak => Rpc.ResizeMessage.message->writeToKak
 
 let kak = ref(Node.spawn("kak", ["-clear"]))
 
@@ -220,11 +220,7 @@ let writeToKak = message => {
   getKak().stdin.write(. message)
 }
 
-let writeKeys = keys =>
-  keys
-  ->Rpc.createKeysMessage
-  ->Rpc.stringifyMessage
-  ->writeToKak
+let writeKeys = keys => keys->Rpc.KeysMessage.serialize->writeToKak
 
 let querySelections = () =>
   writeKeys(":echo kakoune-mode selections: %val{selections_display_column_desc}<ret>")

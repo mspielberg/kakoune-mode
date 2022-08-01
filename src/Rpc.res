@@ -1,32 +1,34 @@
-type keysMessage = {
-  jsonrpc: string,
-  method: string,
-  params: array<string>,
-}
-
-let createKeysMessage = keys => {
-  let correctedKeys = keys|>Js.String.replace("\n", "<ret>")
-  {jsonrpc: "2.0", method: "keys", params: [correctedKeys]}
-}
-
-module Encode = {
-  let keysMessage = km => {
-    {
-      "jsonrpc": km.jsonrpc,
-      "method": km.method,
-      "params": km.params,
-    }
+module Message = {
+  type t<'a> = {
+    method: string,
+    params: array<'a>
   }
-  let resizeMessage = {
+
+  let serialize = (t: t<'a>) => {
+    "jsonrpc": "2.0",
+    "method": t.method,
+    "params": t.params
+  }
+  ->Js.Json.stringifyAny
+  ->Belt.Option.getExn
+}
+
+module KeysMessage = {
+  let toMessage: string => Message.t<string> = keys => {
+    method: "keys",
+    params: [ keys ],
+  }
+
+  let serialize = keys => keys->toMessage->Message.serialize
+}
+
+module ResizeMessage = {
+  let message = {
     let maxUInt32 = 4_294_967_295.
     {
-      "jsonrpc": "2.0",
-      "method": "resize",
-      "params": [ maxUInt32, maxUInt32 ]
+      method: "resize",
+      params: [ maxUInt32, maxUInt32 ]
     }
+    ->Message.serialize
   }
 }
-
-let maxResizeMessage = Encode.resizeMessage->Js.Json.stringifyAny->Belt.Option.getExn
-
-let stringifyMessage = msg => msg->Encode.keysMessage->Js.Json.stringifyAny->Belt.Option.getExn

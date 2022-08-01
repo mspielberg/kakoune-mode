@@ -149,7 +149,7 @@ let overrideCommand = (context, command, callback) =>
 let overrideTypeCommand = (context, writeToKak) =>
   overrideCommand(context, "type", args => {
     switch args.text {
-    | Some(t) => t->Rpc.createKeysMessage->Rpc.stringifyMessage->writeToKak
+    | Some(t) => t->Rpc.KeysMessage.serialize->writeToKak
     | None => ()
     }
   })
@@ -158,10 +158,7 @@ let registerWindowChangeEventHandler = writeToKak =>
   Window.onDidChangeActiveTextEditor(event =>
     switch event {
     | None => ()
-    | Some(e) =>
-      Rpc.createKeysMessage(":e " ++ (e.document.fileName ++ "<ret>"))
-      ->Rpc.stringifyMessage
-      ->writeToKak
+    | Some(e) => (":e " ++ e.document.fileName ++ "<ret>")->Rpc.KeysMessage.serialize->writeToKak
     }
   )
 
