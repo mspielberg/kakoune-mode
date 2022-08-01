@@ -74,6 +74,23 @@ let processDrawStatus = (statusLine, modeLine) => {
   }
 }
 
+let showPrompt = (title, content) => {
+  open Belt.Option
+  let title = KakouneTypes.Line.getText(Some(title))->getExn
+  let options = content->Js.Array2.map(line => {
+    let components = Some(line)->KakouneTypes.Line.getText->getExn->Js.String2.split(": ")
+    (components[0], components[1])
+  })
+  Vscode.showPrompt(title, options)
+}
+
+let processInfoShow = (title, content, infoStyle) => {
+  switch infoStyle {
+  | #prompt => showPrompt(title, content, writeKeys)
+  | _ => ()
+  }
+}
+
 let processSetCursor = (mode, coord) => {
   if mode == "buffer" && Mode.getMode() == Mode.Insert {
     let vscodePosition = coord->KakouneTypes.Coord.toVscode
@@ -88,6 +105,9 @@ let processCommand = (msg: string) => {
     | Some(Draw({lines: lines})) => processDraw(lines)
     | Some(DrawStatus({statusLine: statusLine, modeLine: modeLine})) =>
       processDrawStatus(statusLine, modeLine)
+    | Some(InfoHide) => Vscode.hidePrompt()
+    | Some(InfoShow({title: title, content: content, style: style})) =>
+      processInfoShow(title, content, style)
     | Some(SetCursor({mode: mode, coord: coord})) =>
       processSetCursor(mode, coord)
     | None => ()

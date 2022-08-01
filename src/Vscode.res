@@ -105,3 +105,29 @@ let replaceAll = text => {
     })
   })
 }
+
+let activePrompt: ref<option<VscodeTypes.Prompt.t>> = ref(None)
+
+let hidePrompt = () => {
+  open VscodeTypes.Prompt
+  activePrompt.contents->Belt.Option.forEach(prompt => prompt->dispose)
+  activePrompt.contents = None
+}
+
+let showPrompt = (title, options, writeKeys) => {
+  open VscodeTypes.Prompt
+  let prompt = make(.)
+  prompt->setPlaceholder(title)
+  prompt->setItems(Js.Array2.map(
+    options,
+    ((key, description)) => { "label": key, "description": description }))
+
+  prompt->onDidChangeValue(key => {
+    writeKeys(key)
+    hidePrompt()
+  })->ignore
+
+  hidePrompt()
+  activePrompt.contents = Some(prompt)
+  prompt->show
+}

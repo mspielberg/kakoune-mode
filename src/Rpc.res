@@ -26,9 +26,20 @@ module Message = {
 
 module UIRequest = {
   open KakouneTypes
+  @deriving(jsConverter)
+  type infoStyle = [
+    | #prompt
+    | #inline
+    | #inlineAbove
+    | #inlineBelow
+    | #menuDoc
+    | #modal
+  ]
   type t =
     |Draw({lines: array<Line.t>, defaultFace: Face.t, paddingFace: Face.t})
     |DrawStatus({statusLine: Line.t, modeLine: Line.t, defaultFace: Face.t})
+    |InfoShow({title: Line.t, content: array<Line.t>, anchor: Coord.t, face: Face.t, style: infoStyle})
+    |InfoHide
     |SetCursor({mode: string, coord: Coord.t})
 
   module Decode = {
@@ -112,6 +123,14 @@ module UIRequest = {
       defaultFace: params[2]->face,
     })
 
+    let infoShow = params => InfoShow({
+      title: params[0]->line,
+      content: params[1]->array(line),
+      anchor: params[2]->coord,
+      face: params[3]->face,
+      style: params[4]->string->infoStyleFromJs->getExn,
+    })
+
     let setCursor = params => SetCursor({
       mode: params[0]->string,
       coord: params[1]->coord,
@@ -125,6 +144,8 @@ module UIRequest = {
     let decoder = switch msg.method {
     | "draw" => Some(draw)
     | "draw_status" => Some(drawStatus)
+    | "info_hide" => Some((_) => InfoHide)
+    | "info_show" => Some(infoShow)
     | "set_cursor" => Some(setCursor)
     | _ => None
     }

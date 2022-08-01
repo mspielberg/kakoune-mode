@@ -46,6 +46,32 @@ module OutputChannel = {
   @send external appendLine: (outputChannel, string) => unit = "appendLine"
 }
 
+module Prompt = {
+  type quickPickItem = {
+    "label": string,
+    "description": string,
+  }
+
+  type t = {
+    title: string,
+    items: array<quickPickItem>,
+    dispose: (. unit) => unit,
+    show: (. unit) => unit,
+    onDidChangeValue: (. string => unit) => disposable,
+  }
+
+  let make: (. unit) => t = (.) => vscode["window"]["createQuickPick"](.)
+
+  @set external setItems: (t, array<quickPickItem>) => unit = "items"
+  @set external setPlaceholder: (t, string) => unit = "placeholder"
+
+  let show = qp => qp.show(.)
+  
+  let dispose = qp => qp.dispose(.)
+
+  let onDidChangeValue = (qp, f) => qp.onDidChangeValue(. f)
+}
+
 module TextEditor = {
   type t = textEditor
   type editBuilder
