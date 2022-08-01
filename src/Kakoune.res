@@ -209,18 +209,11 @@ module Selection = {
 
 let initKak = writeToKak => Rpc.maxResizeMessage->writeToKak
 
-let kak = {
-  let child = Node.spawn("kak", ["-clear"])
-  Node.ChildProcess.setupLoggers(child)
-  ref(child)
-}
+let kak = ref(Node.spawn("kak", ["-clear"]))
 
 let getKak = () => kak.contents
 
-let setKak = newKak => {
-  Node.ChildProcess.setupLoggers(newKak)
-  kak := newKak
-}
+let setKak = newKak => kak := newKak
 
 let writeToKak = message => {
   Js.log2("kak <", message)
