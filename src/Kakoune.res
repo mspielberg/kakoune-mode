@@ -154,8 +154,8 @@ module Position = {
 
   let toVscode = p => Vscode.Position.make(~line=p.line, ~character=p.column)
 
-  let fromString = str => {
-    let components = str->Js.String2.split(".")
+  let fromDescString = desc => {
+    let components = desc->Js.String2.split(".")
     {
       line: components[0]->Belt.Int.fromString->Belt.Option.getExn - 1,
       column: components[1]->Belt.Int.fromString->Belt.Option.getExn - 1,
@@ -180,14 +180,6 @@ module Selection = {
 
   let isForward = s => s.cursor->Position.isAfter(s.anchor)
 
-  let fromString = str => {
-    let components = str->Js.String2.split(",")
-    {
-      anchor: Position.fromString(components[0]),
-      cursor: Position.fromString(components[1]),
-    }
-  }
-
   let toVscode = selection => {
     if selection->isForward {
       Vscode.Selection.make(
@@ -200,10 +192,17 @@ module Selection = {
     }
   }
 
-  let selectionsFromString = str => {
-    str
+  let selectionsFromDescString = desc => {
+    let fromDescString = desc => {
+      let components = desc->Js.String2.split(",")
+      {
+        anchor: Position.fromDescString(components[0]),
+        cursor: Position.fromDescString(components[1]),
+      }
+    }
+    desc
     ->Js.String2.split(" ")
-    ->Js.Array2.map(fromString)
+    ->Js.Array2.map(fromDescString)
   }
 }
 
@@ -230,7 +229,7 @@ let getSelectionsFromStatusLine = statusLine => {
   if statusLine->Js.String2.startsWith(prefix) {
     statusLine
     ->Js.String2.substr(~from=prefix->Js.String2.length)
-    ->Selection.selectionsFromString
+    ->Selection.selectionsFromDescString
     ->Js.Array2.map(Selection.toVscode)
     ->Some
   } else {
