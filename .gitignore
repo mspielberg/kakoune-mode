@@ -2,6 +2,7 @@ node_modules
 .vscode-test/
 *.vsix
 
+.bsb.lock
 .merlin
 lib/
 *.bs.js

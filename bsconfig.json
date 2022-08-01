@@ -1,5 +1,6 @@
 {
 	"name": "kakoune-mode",
+	"namespace": true,
 	"sources": [
 		"src"
 	],
@@ -8,7 +9,6 @@
 		"in-source": true
 	},
 	"bs-dependencies": [
-		"@glennsl/bs-json"
 	],
 	"suffix": ".bs.js"
 }
