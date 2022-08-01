@@ -1,7 +1,7 @@
 module Message = {
   type t<'a> = {
     method: string,
-    params: array<'a>
+    params: 'a
   }
 
   let serialize = (t: t<'a>) => {
@@ -11,24 +11,141 @@ module Message = {
   }
   ->Js.Json.stringifyAny
   ->Belt.Option.getExn
+
+  let parse = msg => {
+    open Belt.Option
+    open Js.Json
+
+    let parsed = msg->parseExn->decodeObject->getExn
+    {
+      method: parsed->Js.Dict.get(_, "method")->getExn->decodeString->getExn,
+      params: parsed->Js.Dict.get(_, "params")->getExn->decodeArray->getExn,
+    }
+  }
+}
+
+module UIRequest = {
+  open KakouneTypes
+  type t =
+    |Draw({lines: array<Line.t>, defaultFace: Face.t, paddingFace: Face.t})
+    |DrawStatus({statusLine: Line.t, modeLine: Line.t, defaultFace: Face.t})
+    |SetCursor({mode: string, coord: Coord.t})
+
+  module Decode = {
+    open Belt.Option
+    open Js.Json
+
+    let array = (json, f) =>
+      json
+      ->decodeArray
+      ->getExn
+      ->Js.Array2.map(f)
+
+    let field = (data, name, f) => {
+      data
+      ->decodeObject
+      ->flatMap(Js.Dict.get(_, name))
+      ->getExn
+      ->f
+    }
+    
+    let int = json =>
+      json
+      ->decodeNumber
+      ->getExn
+      ->Belt.Float.toInt
+    
+    let string = json =>
+      json
+      ->decodeString
+      ->getExn
+
+    let tuple2 = (json, f1, f2) => {
+      let arr = json
+        ->decodeArray
+        ->getExn
+      ( f1(arr[0]), f2(arr[1]) )
+    }
+
+    let tuple3 = (json, f1, f2, f3) => {
+      let arr = json
+        ->decodeArray
+        ->getExn
+      ( f1(arr[0]), f2(arr[1]), f3(arr[2]) )
+    }
+
+    let face: (Js.Json.t => Face.t) = json => {
+      {
+        fg: json->field("fg", string),
+        bg: json->field("bg", string),
+        attributes: json->field("attributes", array(_, string)),
+      }
+    }
+
+    let atom: (Js.Json.t => Atom.t) = json => {
+      {
+        face: json->field("face", face),
+        contents: json->field("contents", string),
+      }
+    }
+
+    let coord: (Js.Json.t => Coord.t) = json => {
+      {
+        line: json->field("line", int),
+        column: json->field("column", int),
+      }
+    }
+
+    let line = json => {
+      json->array(atom)
+    }
+
+    let draw = params => Draw({
+      lines: params[0]->array(line),
+      defaultFace: params[1]->face,
+      paddingFace: params[2]->face,
+    })
+
+    let drawStatus = params => DrawStatus({
+      statusLine: params[0]->line,
+      modeLine: params[1]->line,
+      defaultFace: params[2]->face,
+    })
+
+    let setCursor = params => SetCursor({
+      mode: params[0]->string,
+      coord: params[1]->coord,
+    })
+  }
+
+  let parse: string => option<t> = msg => {
+    open Decode
+    let msg = msg->Message.parse
+    let decoder = switch msg.method {
+    | "draw" => Some(draw)
+    | "draw_status" => Some(drawStatus)
+    | "set_cursor" => Some(setCursor)
+    | _ => None
+    }
+    decoder->Belt.Option.map(d => msg.params->d)
+  }
 }
 
 module KeysMessage = {
-  let toMessage: string => Message.t<string> = keys => {
-    method: "keys",
-    params: [ keys ],
+  let make = keys => {
+    Message.method: "keys",
+    Message.params: [
+      keys->Js.String2.replaceByRe(%re("/\\n/g"), "<ret>")
+    ],
   }
-
-  let serialize = keys => keys->toMessage->Message.serialize
 }
 
 module ResizeMessage = {
-  let message = {
+  let make = () => {
     let maxUInt32 = 4_294_967_295.
     {
-      method: "resize",
-      params: [ maxUInt32, maxUInt32 ]
+      Message.method: "resize",
+      Message.params: [ maxUInt32, maxUInt32 ]
     }
-    ->Message.serialize
   }
 }

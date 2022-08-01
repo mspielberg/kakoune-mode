@@ -1,5 +1,5 @@
 let activate = context => {
-  switch Vscode.TextEditor.document() {
+  switch VscodeTypes.TextEditor.document() {
   | None => Node.spawn("kak", ["-ui", "json", "-s", "vscode"])->Kakoune.setKak
   | Some(doc) => Node.spawn("kak", ["-ui", "json", "-s", "vscode", doc.fileName])->Kakoune.setKak
   }
