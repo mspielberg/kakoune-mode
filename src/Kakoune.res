@@ -84,7 +84,6 @@ let processSetCursor = (mode, coord) => {
 
 let processCommand = (msg: string) => {
   let parsed = msg->Rpc.UIRequest.parse
-  Js.log2("kak >", parsed)
   switch parsed {
     | Some(Draw({lines: lines})) => processDraw(lines)
     | Some(DrawStatus({statusLine: statusLine, modeLine: modeLine})) =>

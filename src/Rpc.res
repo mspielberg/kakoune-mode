@@ -121,6 +121,7 @@ module UIRequest = {
   let parse: string => option<t> = msg => {
     open Decode
     let msg = msg->Message.parse
+    Js.log2("kak >", msg)
     let decoder = switch msg.method {
     | "draw" => Some(draw)
     | "draw_status" => Some(drawStatus)
