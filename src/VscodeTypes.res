@@ -58,6 +58,7 @@ module Prompt = {
     dispose: (. unit) => unit,
     show: (. unit) => unit,
     onDidChangeValue: (. string => unit) => disposable,
+    onDidHide: (. unit => unit) => disposable,
   }
 
   let make: (. unit) => t = (.) => vscode["window"]["createQuickPick"](.)
@@ -70,6 +71,8 @@ module Prompt = {
   let dispose = qp => qp.dispose(.)
 
   let onDidChangeValue = (qp, f) => qp.onDidChangeValue(. f)
+
+  let onDidHide = (qp, f) => qp.onDidHide(. f)
 }
 
 module TextEditor = {

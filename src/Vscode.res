@@ -110,8 +110,10 @@ let activePrompt: ref<option<VscodeTypes.Prompt.t>> = ref(None)
 
 let hidePrompt = () => {
   open VscodeTypes.Prompt
-  activePrompt.contents->Belt.Option.forEach(prompt => prompt->dispose)
-  activePrompt.contents = None
+  activePrompt.contents->Belt.Option.forEach(prompt => {
+    activePrompt.contents = None
+    prompt->dispose
+  })
 }
 
 let showPrompt = (title, options, writeKeys) => {
@@ -125,6 +127,12 @@ let showPrompt = (title, options, writeKeys) => {
   prompt->onDidChangeValue(key => {
     writeKeys(key)
     hidePrompt()
+  })->ignore
+
+  prompt->onDidHide(() => {
+    if Belt.Option.isSome(activePrompt.contents) {
+      writeKeys("<esc>")
+    }
   })->ignore
 
   hidePrompt()
