@@ -38,7 +38,7 @@ module Line = {
 
   let reverse = line => line->map(Belt.Array.reverse)
 
-  let getText = (line: option<t>) => line->map(Js.Array2.reduce(_, (lineText, atom) => lineText ++ atom.contents, ""))
+  let getText = (line: t) => Js.Array2.reduce(line, (lineText, atom) => lineText ++ atom.Atom.contents, "")
 
   let getNumberOfAtoms = map(_, Js.Array2.length)
 

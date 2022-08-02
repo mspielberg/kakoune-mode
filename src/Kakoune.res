@@ -40,6 +40,7 @@ let getModeFromModeLine = (modeLine: KakouneTypes.Line.t) =>
   {
   | "insert" => Mode.Insert
   | "enter key" => Mode.EnterKey
+  | "prompt" => Mode.Prompt
   | s if Js.String2.includes(s, " sel") => Mode.Normal
   | s => {
       Js.log2("Unknown modeline entry:", s)
@@ -47,14 +48,17 @@ let getModeFromModeLine = (modeLine: KakouneTypes.Line.t) =>
     }
   }
 
+let updatePrompt = (statusLine: KakouneTypes.Line.t) => {
+  let prompt = statusLine[0].contents
+  let content = statusLine[1].contents
+  Vscode.showPrompt(prompt, content, writeKeys)
+}
+
 let processDraw = (lines: array<KakouneTypes.Line.t>) =>
   switch Mode.getMode() {
-  | Mode.Insert => () // Nothing to do.
-  | Mode.Unknown
-  | Mode.Normal
-  | Mode.EnterKey => 
+  | _ => 
     lines
-    ->Js.Array2.map(l => Some(l)->KakouneTypes.Line.getText->Belt.Option.getExn)
+    ->Js.Array2.map(KakouneTypes.Line.getText)
     ->Js.String2.concatMany("", _)
     ->Vscode.replaceAll
   }
@@ -70,23 +74,33 @@ let processDrawStatus = (statusLine, modeLine) => {
     | Mode.Unknown
     | Mode.Insert
     | Mode.EnterKey => ()
+    | Mode.Prompt => updatePrompt(statusLine)
     }
   }
 }
 
-let showPrompt = (title, content) => {
-  open Belt.Option
-  let title = KakouneTypes.Line.getText(Some(title))->getExn
+let infoActive = ref(false)
+
+let processInfoHide = () => {
+  if infoActive.contents {
+    infoActive.contents = false
+    Vscode.hidePrompt()
+  }
+}
+
+let showEnterKeyPrompt = (title, content) => {
+  let title = KakouneTypes.Line.getText(title)
   let options = content->Js.Array2.map(line => {
-    let components = Some(line)->KakouneTypes.Line.getText->getExn->Js.String2.split(": ")
+    let components = line->KakouneTypes.Line.getText->Js.String2.split(": ")
     (components[0], components[1])
   })
-  Vscode.showPrompt(title, options)
+  infoActive.contents = true
+  Vscode.showEnterKeyPrompt(title, options)
 }
 
 let processInfoShow = (title, content, infoStyle) => {
   switch infoStyle {
-  | #prompt => showPrompt(title, content, writeKeys)
+  | #prompt => showEnterKeyPrompt(title, content, writeKeys)
   | _ => ()
   }
 }
@@ -105,7 +119,7 @@ let processCommand = (msg: string) => {
     | Some(Draw({lines: lines})) => processDraw(lines)
     | Some(DrawStatus({statusLine: statusLine, modeLine: modeLine})) =>
       processDrawStatus(statusLine, modeLine)
-    | Some(InfoHide) => Vscode.hidePrompt()
+    | Some(InfoHide) => processInfoHide()
     | Some(InfoShow({title: title, content: content, style: style})) =>
       processInfoShow(title, content, style)
     | Some(SetCursor({mode: mode, coord: coord})) =>

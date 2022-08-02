@@ -56,12 +56,15 @@ module QuickPick = {
     activeItems: array<quickPickItem>,
     title: string,
     items: array<quickPickItem>,
+    value: string,
   }
 
   let make: (. unit) => t = (.) => vscode["window"]["createQuickPick"](.)
 
   @set external setItems: (t, array<quickPickItem>) => unit = "items"
   @set external setPlaceholder: (t, string) => unit = "placeholder"
+  @set external setTitle: (t, string) => unit = "title"
+  @set external setValue: (t, string) => unit = "value"
 
   @send external onDidAccept: (t, unit => unit) => unit = "onDidAccept"
   @send external onDidChangeActive: (t, array<quickPickItem> => unit) => unit = "onDidChangeActive"

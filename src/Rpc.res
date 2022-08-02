@@ -164,10 +164,9 @@ module KeysMessage = {
 
 module ResizeMessage = {
   let make = () => {
-    let maxUInt32 = 4_294_967_295.
     {
       Message.method: "resize",
-      Message.params: [ maxUInt32, maxUInt32 ]
+      Message.params: [Js.Int.max, Js.Int.max]
     }
   }
 }

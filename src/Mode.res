@@ -3,6 +3,7 @@ type t =
   | Normal
   | Insert
   | EnterKey
+  | Prompt
 
 let mode = ref(Unknown)
 

@@ -60,7 +60,8 @@ let updateCursorStyle = (newMode: Mode.t) =>
   | Mode.Normal => setCursorStyle(TextEditor.Block)
   | Mode.Insert => setCursorStyle(TextEditor.Line)
   | Mode.Unknown
-  | Mode.EnterKey => setCursorStyle(TextEditor.BlockOutline)
+  | Mode.EnterKey
+  | Mode.Prompt => setCursorStyle(TextEditor.BlockOutline)
   }
 
 let setSelection = selection => {
@@ -107,14 +108,13 @@ let replaceAll = text => {
 let activePrompt: ref<option<VscodeTypes.QuickPick.t>> = ref(None)
 
 let hidePrompt = () => {
-  open VscodeTypes.QuickPick
   activePrompt.contents->Belt.Option.forEach(prompt => {
     activePrompt.contents = None
-    prompt->dispose
+    prompt->QuickPick.dispose
   })
 }
 
-let showPrompt = (title, options, writeKeys) => {
+let showEnterKeyPrompt = (title, options, writeKeys) => {
   open VscodeTypes.QuickPick
   let prompt = make(.)
   prompt->setPlaceholder(title)
@@ -125,8 +125,8 @@ let showPrompt = (title, options, writeKeys) => {
   prompt->onDidAccept(() => {
     let activeItems = prompt.activeItems
     if Js.Array2.length(activeItems) > 0 {
-      writeKeys(activeItems[0]["label"]->Js.String2.substring(~from=0, ~to_=1))
       hidePrompt()
+      writeKeys(activeItems[0]["label"]->Js.String2.substring(~from=0, ~to_=1))
     }
   })
 
@@ -139,6 +139,7 @@ let showPrompt = (title, options, writeKeys) => {
 
   prompt->onDidHide(() => {
     if Belt.Option.isSome(activePrompt.contents) {
+      activePrompt.contents = None
       writeKeys("<esc>")
     }
   })->ignore
@@ -146,4 +147,31 @@ let showPrompt = (title, options, writeKeys) => {
   hidePrompt()
   activePrompt.contents = Some(prompt)
   prompt->show
+}
+
+let showPrompt = (title, value, writeKeys) => {
+  open VscodeTypes.QuickPick
+  if activePrompt.contents->Belt.Option.isNone {
+    let prompt = make(.)
+    activePrompt.contents = Some(prompt)
+    prompt->QuickPick.onDidAccept(() => {
+      hidePrompt()
+      writeKeys("<ret>")
+    })
+    prompt->onDidChangeValue(newValue => writeKeys("<c-u>" ++ newValue))
+    prompt->onDidHide(() => {
+      if Belt.Option.isSome(activePrompt.contents) {
+        activePrompt.contents = None
+        writeKeys("<esc>")
+      }
+    })
+    prompt->show
+  }
+  let prompt = Belt.Option.getExn(activePrompt.contents)
+  if prompt.title != title {
+    prompt->setTitle(title)
+  }
+  if prompt.value != value {
+    prompt->setValue(value)
+  }
 }
