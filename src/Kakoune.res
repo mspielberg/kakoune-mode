@@ -77,7 +77,7 @@ let processDrawStatus = (statusLine, modeLine) => {
     | Mode.Prompt => updatePrompt(statusLine)
     }
   }
-  Js.Promise.resolve()
+  Promise.resolve()
 }
 
 let infoActive = ref(false)
@@ -87,7 +87,7 @@ let processInfoHide = () => {
     infoActive.contents = false
     Vscode.hidePrompt()
   }
-  Js.Promise.resolve()
+  Promise.resolve()
 }
 
 let showEnterKeyPrompt = (title, content) => {
@@ -105,7 +105,7 @@ let processInfoShow = (title, content, infoStyle) => {
   | #prompt if Mode.getMode() == Mode.EnterKey => showEnterKeyPrompt(title, content, writeKeys)
   | _ => ()
   }
-  Js.Promise.resolve()
+  Promise.resolve()
 }
 
 let processSetCursor = (mode, coord) => {
@@ -114,7 +114,7 @@ let processSetCursor = (mode, coord) => {
     VscodeTypes.Selection.make(~anchor=vscodePosition, ~active=vscodePosition)
     ->Vscode.setSelection
   }
-  Js.Promise.resolve()
+  Promise.resolve()
 }
 
 let processCommand = (msg: string) => {
@@ -128,7 +128,7 @@ let processCommand = (msg: string) => {
       processInfoShow(title, content, style)
     | Some(SetCursor({mode: mode, coord: coord})) =>
       processSetCursor(mode, coord)
-    | None => Js.Promise.resolve()
+    | None => Promise.resolve()
   }
 }
 
@@ -138,11 +138,11 @@ let handleIncomingError = error => {
   str->VscodeTypes.Window.showError
 }
 
-let pendingCommand = ref(Js.Promise.resolve())
+let pendingCommand = ref(Promise.resolve())
 
 let handleIncomingCommand = command =>
   command
   ->Js.String2.fromCharCodeMany
   ->Rpc.InputBuffer.push(msg => {
-    pendingCommand.contents = Js.Promise.then_(_ => processCommand(msg), pendingCommand.contents)
+    pendingCommand.contents = pendingCommand.contents->Promise.then(_ => processCommand(msg))
   })

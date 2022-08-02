@@ -104,7 +104,7 @@ module TextEditor = {
   @set external setSelection: (t, selection) => unit = "selection"
   @get external getSelections: t => array<selection> = "selections"
   @set external setSelections: (t, array<selection>) => unit = "selections"
-  @send external edit: (t, editBuilder => unit, editOptions) => Js.Promise.t<bool> = "edit"
+  @send external edit: (t, editBuilder => unit, editOptions) => Promise.t<bool> = "edit"
 
   @send external replace: (editBuilder, selection, string) => unit = "replace"
 }

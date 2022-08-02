@@ -93,26 +93,25 @@ let replaceAll = text => {
         selection,
         text->Js.String2.substring(~from=0, ~to_=Js.String2.length(text) - 1))
     let start = now()
-    let rec runEdit: unit => Js.Promise.t<unit> = () => {
-      let p = ed
+    let rec runEdit = (): Promise.t<unit> => {
+      ed
       ->TextEditor.edit(cb, {
         undoStopBefore: false,
         undoStopAfter: false,
       })
-
-      Js.Promise.then_(success => {
+      ->Promise.then(success => {
          if !success {
           runEdit()
         } else {
           let after = now()
           Js.log("edit() completed after " ++ Js.Float.toFixedWithPrecision((after -. start) *. 1000., ~digits=1) ++ "ms")
-          Js.Promise.resolve()
+          Promise.resolve()
         }
-      }, p)
+      })
     }
     runEdit()
   })
-  ->Belt.Option.getWithDefault(Js.Promise.resolve())
+  ->Belt.Option.getWithDefault(Promise.resolve())
 }
 
 let activePrompt: ref<option<VscodeTypes.QuickPick.t>> = ref(None)
