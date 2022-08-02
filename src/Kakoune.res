@@ -100,7 +100,7 @@ let showEnterKeyPrompt = (title, content) => {
 
 let processInfoShow = (title, content, infoStyle) => {
   switch infoStyle {
-  | #prompt => showEnterKeyPrompt(title, content, writeKeys)
+  | #prompt if Mode.getMode() == Mode.EnterKey => showEnterKeyPrompt(title, content, writeKeys)
   | _ => ()
   }
 }
