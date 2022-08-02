@@ -64,7 +64,7 @@ module Coord = {
     column: int,
   }
 
-  let toVscode = p => VscodeTypes.Position.make(~line=p.line, ~character=p.column)
+  let toVscode = p => Vscode.Position.make(~line=p.line, ~character=p.column)
 
   let fromDescString = desc => {
     let components = desc->Js.String2.split(".")
@@ -94,11 +94,11 @@ module Selection = {
 
   let toVscode = selection => {
     if selection->isForward {
-      VscodeTypes.Selection.make(
+      Vscode.Selection.make(
         ~anchor=selection.anchor->Coord.toVscode,
         ~active=selection.cursor->Coord.toVscode)
     } else {
-      VscodeTypes.Selection.make(
+      Vscode.Selection.make(
         ~anchor=selection.anchor->Coord.successor->Coord.toVscode,
         ~active=selection.cursor->Coord.toVscode)
     }

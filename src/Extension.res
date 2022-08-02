@@ -1,5 +1,5 @@
 let activate = context => {
-  switch VscodeTypes.TextEditor.document() {
+  switch Vscode.TextEditor.document() {
   | None => Node.spawn("kak", ["-ui", "json", "-s", "vscode"])->Kakoune.setKak
   | Some(doc) => Node.spawn("kak", ["-ui", "json", "-s", "vscode", doc.fileName])->Kakoune.setKak
   }
@@ -8,7 +8,7 @@ let activate = context => {
   Kakoune.getKak().stdout.on(. "data", data => Kakoune.handleIncomingCommand(data)->ignore)
   Kakoune.writeToKak->Kakoune.initKak
 
-  Vscode.overrideTypeCommand(context, Kakoune.writeToKak)
+  Vscode.overrideTypeCommand(context, Kakoune.writeKeys)
   Vscode.Commands.registerCommand("extension.send_escape", () => Kakoune.writeKeys("<esc>"))
   ->Js.Array.push(context.subscriptions)
   ->ignore
@@ -23,6 +23,6 @@ let activate = context => {
   ->Js.Array.push(context.subscriptions)
   ->ignore
 
-  Vscode.registerWindowChangeEventHandler(Kakoune.writeToKak)
+  Vscode.registerWindowChangeEventHandler(Kakoune.writeKeys)
   Js.log("activate completed")
 }

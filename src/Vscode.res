@@ -1,17 +1,135 @@
 open VscodeTypes
 
-module Commands = {
-  let registerCommand: (string, 'a => unit) => disposable = (name, callback) =>
-    vscode["commands"]["registerCommand"](. name, callback)
+@module external vscode: vscode = "vscode"
 
-  let executeCommand: string => unit = command => vscode["commands"]["executeCommand"](. command)
+module Commands = {
+  @send external registerCommand_: (commands, string, 'a => unit) => disposable = "registerCommand"
+
+  let registerCommand: (string, 'a => unit) => disposable = (name, callback) =>
+    vscode.commands->registerCommand_(name, callback)
+
+  @send external executeCommand_: (commands, string) => unit = "executeCommand"
+
+  let executeCommand: string => unit = command =>
+    vscode.commands->executeCommand_(command)
+
+  @send external executeCommandWithArg_: (commands, string, textCommandArgs) => unit = "executeCommand"
 
   let executeCommandWithArg: (string, textCommandArgs) => unit = (command, arg) =>
-    vscode["commands"]["executeCommand"](. command, arg)
+    vscode.commands->executeCommandWithArg_(command, arg)
+}
+
+module OutputChannel = {
+  @send external append: (outputChannel, string) => unit = "append"
+  @send external appendLine: (outputChannel, string) => unit = "appendLine"
+}
+
+module QuickPick = {
+  type quickPickItem = {
+    "label": string,
+    "description": string,
+  }
+
+  type t = {
+    activeItems: array<quickPickItem>,
+    title: string,
+    items: array<quickPickItem>,
+    value: string,
+  }
+
+  @send external createQuickPick: window => t = "createQuickPick"
+
+  let make = () => vscode.window->createQuickPick
+
+  @set external setItems: (t, array<quickPickItem>) => unit = "items"
+  @set external setPlaceholder: (t, string) => unit = "placeholder"
+  @set external setTitle: (t, string) => unit = "title"
+  @set external setValue: (t, string) => unit = "value"
+
+  @send external onDidAccept: (t, unit => unit) => unit = "onDidAccept"
+  @send external onDidChangeActive: (t, array<quickPickItem> => unit) => unit = "onDidChangeActive"
+  @send external onDidChangeSelection: (t, array<quickPickItem> => unit) => unit = "onDidChangeSelection"
+  @send external onDidChangeValue: (t, string => unit) => unit = "onDidChangeValue"
+  @send external onDidHide: (t, unit => unit) => unit = "onDidHide"
+  @send external dispose: t => unit = "dispose"
+  @send external show: t => unit = "show"
+}
+
+module TextEditor = {
+  type t = textEditor
+  type editBuilder
+  type editOptions = {
+    undoStopAfter: bool,
+    undoStopBefore: bool,
+  }
+
+  @deriving(jsConverter)
+  type cursorStyle =
+    | @as(1) Line
+    | @as(2) Block
+    | @as(3) Underline
+    | @as(4) LineThin
+    | @as(5) BlockOutline
+    | @as(6) UnderlineThin
+
+  let activeTextEditor = () => vscode.window.activeTextEditor
+
+  let options = () => activeTextEditor()->Belt.Option.map(t => t.options)
+
+  let document = () => activeTextEditor()->Belt.Option.map(t => t.document)
+
+  @set external setSelection: (t, selection) => unit = "selection"
+  @get external getSelections: t => array<selection> = "selections"
+  @set external setSelections: (t, array<selection>) => unit = "selections"
+  @send external edit: (t, editBuilder => unit, editOptions) => Promise.t<bool> = "edit"
+
+  @send external replace: (editBuilder, selection, string) => unit = "replace"
+}
+
+module Window = {
+  @send external createOutputChannel_: (window, string) => disposable = "createOutputChannel"
+
+  let createOutputChannel = name => vscode.window->createOutputChannel_(name)
+
+  @send external showErrorMessage: (window, string) => unit = "showErrorMessage"
+
+  let showError: string => unit = message => vscode.window->showErrorMessage(message)
+
+  @send external onDidChangeActiveTextEditor: (window, option<TextEditor.t> => unit) => unit = "onDidChangeActiveTextEditor"
+
+  let onDidChangeActiveTextEditor = (callback: option<TextEditor.t> => unit) =>
+    vscode.window->onDidChangeActiveTextEditor(callback)
+}
+
+module Workspace = {
+  @send external onDidChangeTextDocument_: (workspace, textDocumentChangeEvent => unit) => unit = "onDidChangeTextDocument"
+
+  let onDidChangeTextDocument = (listener: textDocumentChangeEvent => unit) =>
+    vscode.workspace->onDidChangeTextDocument_(listener)
+}
+
+module Position = {
+  type t = position
+
+  @module("vscode") @new
+  external make: (~line: int, ~character: int) => t = "Position"
+  @get external character: t => int = "character"
+  @get external line: t => int = "line"
+}
+
+module Selection = {
+  type t = selection
+
+  @module("vscode") @new
+  external make: (~anchor: position, ~active: position) => t = "Selection"
+  @get external anchor: t => position = "anchor"
+  @get external active: t => position = "active"
+  @get external start: t => position = "start"
+  @get external end_: t => position = "end"
 }
 
 let createChannel = (context) => {
-  let channel = vscode["window"]["createOutputChannel"](. "Kakoune mode")
+  let channel = Window.createOutputChannel("Kakoune mode")
   Js.Array.push(channel, context.subscriptions)->ignore
   channel
 }
@@ -33,19 +151,19 @@ let overrideCommand = (context, command, callback) =>
   ->Js.Array.push(context.subscriptions)
   ->ignore
 
-let overrideTypeCommand = (context, writeToKak) =>
+let overrideTypeCommand = (context, writeKeys) =>
   overrideCommand(context, "type", args => {
     switch args.text {
-    | Some(t) => t->Rpc.KeysMessage.make->writeToKak
+    | Some(t) => t->writeKeys
     | None => ()
     }
   })
 
-let registerWindowChangeEventHandler = writeToKak =>
+let registerWindowChangeEventHandler = writeKeys =>
   Window.onDidChangeActiveTextEditor(event =>
     switch event {
     | None => ()
-    | Some(e) => (":e " ++ e.document.fileName ++ "<ret>")->Rpc.KeysMessage.make->writeToKak
+    | Some(e) => (":e " ++ e.document.fileName ++ "<ret>")->writeKeys
     }
   )
 
@@ -114,7 +232,7 @@ let replaceAll = text => {
   ->Belt.Option.getWithDefault(Promise.resolve())
 }
 
-let activePrompt: ref<option<VscodeTypes.QuickPick.t>> = ref(None)
+let activePrompt: ref<option<QuickPick.t>> = ref(None)
 
 let hidePrompt = () => {
   activePrompt.contents->Belt.Option.forEach(prompt => {
@@ -124,8 +242,8 @@ let hidePrompt = () => {
 }
 
 let showEnterKeyPrompt = (title, options, writeKeys) => {
-  open VscodeTypes.QuickPick
-  let prompt = make(.)
+  open QuickPick
+  let prompt = make()
   prompt->setPlaceholder(title)
   prompt->setItems(Js.Array2.map(
     options,
@@ -159,9 +277,9 @@ let showEnterKeyPrompt = (title, options, writeKeys) => {
 }
 
 let showPrompt = (title, value, writeKeys) => {
-  open VscodeTypes.QuickPick
+  open QuickPick
   if activePrompt.contents->Belt.Option.isNone {
-    let prompt = make(.)
+    let prompt = make()
     activePrompt.contents = Some(prompt)
     prompt->QuickPick.onDidAccept(() => {
       hidePrompt()

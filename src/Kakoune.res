@@ -111,7 +111,7 @@ let processInfoShow = (title, content, infoStyle) => {
 let processSetCursor = (mode, coord) => {
   if mode == "buffer" && Mode.getMode() == Mode.Insert {
     let vscodePosition = coord->KakouneTypes.Coord.toVscode
-    VscodeTypes.Selection.make(~anchor=vscodePosition, ~active=vscodePosition)
+    Vscode.Selection.make(~anchor=vscodePosition, ~active=vscodePosition)
     ->Vscode.setSelection
   }
   Promise.resolve()
@@ -135,7 +135,7 @@ let processCommand = (msg: string) => {
 let handleIncomingError = error => {
   let str = error->Js.String2.fromCharCodeMany
   Js.log2("kakerr >", str)
-  str->VscodeTypes.Window.showError
+  str->Vscode.Window.showError
 }
 
 let pendingCommand = ref(Promise.resolve())
