@@ -20,6 +20,9 @@
 				"title": "Hello World"
 			}
 		],
+		"configurationDefaults": {
+			"editor.autoClosingBrackets": "never"
+		},
 		"keybindings": [
 			{
 				"key": "Escape",
