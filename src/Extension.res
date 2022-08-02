@@ -5,7 +5,7 @@ let activate = context => {
   }
 
   Kakoune.getKak().stderr.on(. "data", Kakoune.handleIncomingError)
-  Kakoune.getKak().stdout.on(. "data", Kakoune.handleIncomingCommand)
+  Kakoune.getKak().stdout.on(. "data", data => Kakoune.handleIncomingCommand(data)->ignore)
   Kakoune.writeToKak->Kakoune.initKak
 
   Vscode.overrideTypeCommand(context, Kakoune.writeToKak)

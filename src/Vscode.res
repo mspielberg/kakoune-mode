@@ -76,21 +76,15 @@ let setSelections = selections => {
   }
 }
 
-let replaceLine = (line, lineNumber) => {
-  TextEditor.activeTextEditor()->Belt.Option.forEach(ed => {
-    let selection = Selection.make(
-      ~anchor=Position.make(~line=lineNumber, ~character=0),
-      ~active=Position.make(~line=lineNumber + 1, ~character=0))
-    let cb = textEditorEdit => textEditorEdit->TextEditor.replace(selection, line)
-    ed->TextEditor.edit(cb, {
-      undoStopBefore: false,
-      undoStopAfter: false,
-    })
-  })
+@val external hrnow: () => array<float> = "process.hrtime"
+
+let now = () => {
+  let split = hrnow()
+  split[0] +. split[1] /. 1e9
 }
 
 let replaceAll = text => {
-  TextEditor.activeTextEditor()->Belt.Option.forEach(ed => {
+  TextEditor.activeTextEditor()->Belt.Option.map(ed => {
     let selection = Selection.make(
       ~anchor=Position.make(~line=0, ~character=0),
       ~active=Position.make(~line=Js.Int.max, ~character=0))
@@ -98,11 +92,27 @@ let replaceAll = text => {
       textEditorEdit->TextEditor.replace(
         selection,
         text->Js.String2.substring(~from=0, ~to_=Js.String2.length(text) - 1))
-    ed->TextEditor.edit(cb, {
-      undoStopBefore: false,
-      undoStopAfter: false,
-    })
+    let start = now()
+    let rec runEdit: unit => Js.Promise.t<unit> = () => {
+      let p = ed
+      ->TextEditor.edit(cb, {
+        undoStopBefore: false,
+        undoStopAfter: false,
+      })
+
+      Js.Promise.then_(success => {
+         if !success {
+          runEdit()
+        } else {
+          let after = now()
+          Js.log("edit() completed after " ++ Js.Float.toFixedWithPrecision((after -. start) *. 1000., ~digits=1) ++ "ms")
+          Js.Promise.resolve()
+        }
+      }, p)
+    }
+    runEdit()
   })
+  ->Belt.Option.getWithDefault(Js.Promise.resolve())
 }
 
 let activePrompt: ref<option<VscodeTypes.QuickPick.t>> = ref(None)
