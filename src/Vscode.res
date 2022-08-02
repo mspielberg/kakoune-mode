@@ -64,13 +64,11 @@ let updateCursorStyle = (newMode: Mode.t) =>
   }
 
 let setSelection = selection => {
-  Js.log2("setSelection", selection)
   TextEditor.activeTextEditor()
   ->Belt.Option.forEach(ed => ed->TextEditor.setSelection(selection))
 }
 
 let setSelections = selections => {
-  Js.log2("setSelections", selections)
   switch TextEditor.activeTextEditor() {
   | Some(ed) => ed->TextEditor.setSelections(selections)
   | None => ()
@@ -106,10 +104,10 @@ let replaceAll = text => {
   })
 }
 
-let activePrompt: ref<option<VscodeTypes.Prompt.t>> = ref(None)
+let activePrompt: ref<option<VscodeTypes.QuickPick.t>> = ref(None)
 
 let hidePrompt = () => {
-  open VscodeTypes.Prompt
+  open VscodeTypes.QuickPick
   activePrompt.contents->Belt.Option.forEach(prompt => {
     activePrompt.contents = None
     prompt->dispose
@@ -117,17 +115,27 @@ let hidePrompt = () => {
 }
 
 let showPrompt = (title, options, writeKeys) => {
-  open VscodeTypes.Prompt
+  open VscodeTypes.QuickPick
   let prompt = make(.)
   prompt->setPlaceholder(title)
   prompt->setItems(Js.Array2.map(
     options,
     ((key, description)) => { "label": key, "description": description }))
 
-  prompt->onDidChangeValue(key => {
-    writeKeys(key)
-    hidePrompt()
-  })->ignore
+  prompt->onDidAccept(() => {
+    let activeItems = prompt.activeItems
+    if Js.Array2.length(activeItems) > 0 {
+      writeKeys(activeItems[0]["label"]->Js.String2.substring(~from=0, ~to_=1))
+      hidePrompt()
+    }
+  })
+
+  if Mode.getMode() == Mode.EnterKey {
+    prompt->onDidChangeValue(key => {
+      writeKeys(key)
+      hidePrompt()
+    })->ignore
+  }
 
   prompt->onDidHide(() => {
     if Belt.Option.isSome(activePrompt.contents) {

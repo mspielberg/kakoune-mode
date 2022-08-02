@@ -46,19 +46,16 @@ module OutputChannel = {
   @send external appendLine: (outputChannel, string) => unit = "appendLine"
 }
 
-module Prompt = {
+module QuickPick = {
   type quickPickItem = {
     "label": string,
     "description": string,
   }
 
   type t = {
+    activeItems: array<quickPickItem>,
     title: string,
     items: array<quickPickItem>,
-    dispose: (. unit) => unit,
-    show: (. unit) => unit,
-    onDidChangeValue: (. string => unit) => disposable,
-    onDidHide: (. unit => unit) => disposable,
   }
 
   let make: (. unit) => t = (.) => vscode["window"]["createQuickPick"](.)
@@ -66,13 +63,13 @@ module Prompt = {
   @set external setItems: (t, array<quickPickItem>) => unit = "items"
   @set external setPlaceholder: (t, string) => unit = "placeholder"
 
-  let show = qp => qp.show(.)
-  
-  let dispose = qp => qp.dispose(.)
-
-  let onDidChangeValue = (qp, f) => qp.onDidChangeValue(. f)
-
-  let onDidHide = (qp, f) => qp.onDidHide(. f)
+  @send external onDidAccept: (t, unit => unit) => unit = "onDidAccept"
+  @send external onDidChangeActive: (t, array<quickPickItem> => unit) => unit = "onDidChangeActive"
+  @send external onDidChangeSelection: (t, array<quickPickItem> => unit) => unit = "onDidChangeSelection"
+  @send external onDidChangeValue: (t, string => unit) => unit = "onDidChangeValue"
+  @send external onDidHide: (t, unit => unit) => unit = "onDidHide"
+  @send external dispose: t => unit = "dispose"
+  @send external show: t => unit = "show"
 }
 
 module TextEditor = {
