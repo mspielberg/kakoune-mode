@@ -52,6 +52,17 @@ let punct = [
   "?",
 ]
 
+let navigation = [
+  "up",
+  "down",
+  "left",
+  "right",
+  "home",
+  "end",
+  "pageup",
+  "pagedown",
+]
+
 let registerModifiedKeys = (context, writeKeys, modifier, keys) =>
   keys->Js.Array2.forEach(c => registerKey(context, modifier, c, writeKeys))
 
@@ -59,4 +70,6 @@ let registerAllKeys = (context, writeKeys) => {
   registerModifiedKeys(context, writeKeys, "a-", alpha)
   registerModifiedKeys(context, writeKeys, "a-", alpha->Js.Array2.map(Js.String2.toUpperCase))
   registerModifiedKeys(context, writeKeys, "a-", punct)
+  registerModifiedKeys(context, writeKeys, "", navigation)
+  registerModifiedKeys(context, writeKeys, "s-", navigation)
 }

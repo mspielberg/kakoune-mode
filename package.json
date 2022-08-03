@@ -453,6 +453,86 @@
 				"key": "Alt+Shift+/",
 				"command": "kakoune-mode.type.a-?",
 				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "up",
+				"command": "kakoune-mode.type.up",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "down",
+				"command": "kakoune-mode.type.down",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "left",
+				"command": "kakoune-mode.type.left",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "right",
+				"command": "kakoune-mode.type.right",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "home",
+				"command": "kakoune-mode.type.home",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "end",
+				"command": "kakoune-mode.type.end",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "pageup",
+				"command": "kakoune-mode.type.pageup",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "pagedown",
+				"command": "kakoune-mode.type.pagedown",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+up",
+				"command": "kakoune-mode.type.s-up",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+down",
+				"command": "kakoune-mode.type.s-down",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+left",
+				"command": "kakoune-mode.type.s-left",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+right",
+				"command": "kakoune-mode.type.s-right",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+home",
+				"command": "kakoune-mode.type.s-home",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+end",
+				"command": "kakoune-mode.type.s-end",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+pageup",
+				"command": "kakoune-mode.type.s-pageup",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+pagedown",
+				"command": "kakoune-mode.type.s-pagedown",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
 			}
 		]
 	},
