@@ -1,20 +1,3 @@
-let vscodeKeys = [
-  "a",
-]
-
-let kakouneMap = {
-  "s-1": "!",
-  "s-2": "@",
-  "s-3": "#",
-  "s-4": "$",
-  "s-5": "%",
-  "s-6": "^",
-  "s-7": "&",
-  "s-8": "*",
-  "s-9": "(",
-  "s-0": ")",
-}
-
 let registerKey = (context: VscodeTypes.extension_context, modifier, key, writeKeys) => {
   Vscode.Commands.registerCommand(
     `kakoune-mode.type.${modifier}${key}`,
@@ -34,12 +17,17 @@ let alpha = {
   result
 }
 
-let modifiers = [
-  "a-",
-  "c-",
-]
-
 let punct = [
+  "!",
+  "@",
+  "#",
+  "$",
+  "%",
+  "^",
+  "&",
+  "*",
+  "(",
+  ")",
   "`",
   "-",
   "=",
@@ -51,6 +39,17 @@ let punct = [
   ",",
   ".",
   "/",
+  "~",
+  "_",
+  "+",
+  "{",
+  "}",
+  "|",
+  ":",
+  "\"",
+  "lt",
+  "gt",
+  "?",
 ]
 
 let registerModifiedKeys = (context, writeKeys, modifier, keys) =>
@@ -59,4 +58,5 @@ let registerModifiedKeys = (context, writeKeys, modifier, keys) =>
 let registerAllKeys = (context, writeKeys) => {
   registerModifiedKeys(context, writeKeys, "a-", alpha)
   registerModifiedKeys(context, writeKeys, "a-", alpha->Js.Array2.map(Js.String2.toUpperCase))
+  registerModifiedKeys(context, writeKeys, "a-", punct)
 }
