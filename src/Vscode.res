@@ -3,20 +3,20 @@ open VscodeTypes
 @module external vscode: vscode = "vscode"
 
 module Commands = {
-  @send external registerCommand_: (commands, string, 'a => unit) => disposable = "registerCommand"
+  @send external registerCommand: (commands, string, 'a => unit) => disposable = "registerCommand"
 
   let registerCommand: (string, 'a => unit) => disposable = (name, callback) =>
-    vscode.commands->registerCommand_(name, callback)
+    vscode.commands->registerCommand(name, callback)
 
-  @send external executeCommand_: (commands, string) => unit = "executeCommand"
+  @send external executeCommand: (commands, string) => unit = "executeCommand"
 
   let executeCommand: string => unit = command =>
-    vscode.commands->executeCommand_(command)
+    vscode.commands->executeCommand(command)
 
-  @send external executeCommandWithArg_: (commands, string, textCommandArgs) => unit = "executeCommand"
+  @send external executeCommandWithArg: (commands, string, textCommandArgs) => unit = "executeCommand"
 
   let executeCommandWithArg: (string, textCommandArgs) => unit = (command, arg) =>
-    vscode.commands->executeCommandWithArg_(command, arg)
+    vscode.commands->executeCommandWithArg(command, arg)
 }
 
 module OutputChannel = {
@@ -87,9 +87,9 @@ module TextEditor = {
 }
 
 module Window = {
-  @send external createOutputChannel_: (window, string) => disposable = "createOutputChannel"
+  @send external createOutputChannel: (window, string) => disposable = "createOutputChannel"
 
-  let createOutputChannel = name => vscode.window->createOutputChannel_(name)
+  let createOutputChannel = name => vscode.window->createOutputChannel(name)
 
   @send external showErrorMessage: (window, string) => unit = "showErrorMessage"
 
@@ -139,12 +139,10 @@ let overrideCommand = (context, command, callback) =>
     switch TextEditor.document() {
     | None => ()
     | Some(document) =>
-      switch (document.uri.toString(.), Mode.getMode()) {
-      | ("debug:input", _currentMode) => Commands.executeCommandWithArg("default:" ++ command, args)
-      | (_documentUri, Mode.Insert) =>
-        Commands.executeCommandWithArg("default:" ++ command, args)
+      if ["file", "untitled"]->Js.Array2.includes(document.uri.scheme) {
         callback(args)
-      | _ => callback(args)
+      } else {
+        Commands.executeCommandWithArg("default:" ++ command, args)
       }
     }
   )
