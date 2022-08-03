@@ -192,13 +192,6 @@ let setSelections = selections => {
   }
 }
 
-@val external hrnow: () => array<float> = "process.hrtime"
-
-let now = () => {
-  let split = hrnow()
-  split[0] +. split[1] /. 1e9
-}
-
 let replaceAll = text => {
   TextEditor.activeTextEditor()->Belt.Option.map(ed => {
     let selection = Selection.make(
@@ -208,8 +201,7 @@ let replaceAll = text => {
       textEditorEdit->TextEditor.replace(
         selection,
         text->Js.String2.substring(~from=0, ~to_=Js.String2.length(text) - 1))
-    let start = now()
-    let rec runEdit = (): Promise.t<unit> => {
+    let rec runEdit = (retries) => {
       ed
       ->TextEditor.edit(cb, {
         undoStopBefore: false,
@@ -217,15 +209,16 @@ let replaceAll = text => {
       })
       ->Promise.then(success => {
          if !success {
-          runEdit()
+          runEdit(retries + 1)
         } else {
-          let after = now()
-          Js.log("edit() completed after " ++ Js.Float.toFixedWithPrecision((after -. start) *. 1000., ~digits=1) ++ "ms")
-          Promise.resolve()
+          Promise.resolve(retries)
         }
       })
     }
-    runEdit()
+    runEdit(0)->PromiseUtil.timeWithResult->Promise.then(((retries, elapsed)) => {
+      Js.log(`runEdit() completed after ${Js.Int.toString(retries)} retr${retries == 1 ? "y" : "ies"} (${Js.Float.toFixedWithPrecision(elapsed *. 1000., ~digits=1)} ms)`)
+      Promise.resolve()
+    })
   })
   ->Belt.Option.getWithDefault(Promise.resolve())
 }
