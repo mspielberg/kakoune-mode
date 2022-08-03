@@ -24,5 +24,6 @@ let activate = context => {
   ->ignore
 
   Vscode.registerWindowChangeEventHandler(Kakoune.writeKeys)
+  Keybinds.registerAllKeys(context, Kakoune.writeKeys)
   Js.log("activate completed")
 }

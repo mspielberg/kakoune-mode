@@ -33,6 +33,266 @@
 				"key": "Backspace",
 				"command": "extension.send_backspace",
 				"when": "editorTextFocus"
+			},
+			{
+				"key": "Alt+A",
+				"command": "kakoune-mode.type.a-a",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+B",
+				"command": "kakoune-mode.type.a-b",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+C",
+				"command": "kakoune-mode.type.a-c",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+D",
+				"command": "kakoune-mode.type.a-d",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+E",
+				"command": "kakoune-mode.type.a-e",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+F",
+				"command": "kakoune-mode.type.a-f",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+G",
+				"command": "kakoune-mode.type.a-g",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+H",
+				"command": "kakoune-mode.type.a-h",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+I",
+				"command": "kakoune-mode.type.a-i",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+J",
+				"command": "kakoune-mode.type.a-j",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+K",
+				"command": "kakoune-mode.type.a-k",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+L",
+				"command": "kakoune-mode.type.a-l",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+M",
+				"command": "kakoune-mode.type.a-m",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+N",
+				"command": "kakoune-mode.type.a-n",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+O",
+				"command": "kakoune-mode.type.a-o",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+P",
+				"command": "kakoune-mode.type.a-p",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+Q",
+				"command": "kakoune-mode.type.a-q",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+R",
+				"command": "kakoune-mode.type.a-r",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+S",
+				"command": "kakoune-mode.type.a-s",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+T",
+				"command": "kakoune-mode.type.a-t",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+U",
+				"command": "kakoune-mode.type.a-u",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+V",
+				"command": "kakoune-mode.type.a-v",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+W",
+				"command": "kakoune-mode.type.a-w",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+X",
+				"command": "kakoune-mode.type.a-x",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+Y",
+				"command": "kakoune-mode.type.a-y",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Alt+Z",
+				"command": "kakoune-mode.type.a-z",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+A",
+				"command": "kakoune-mode.type.a-A",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+B",
+				"command": "kakoune-mode.type.a-B",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+C",
+				"command": "kakoune-mode.type.a-C",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+D",
+				"command": "kakoune-mode.type.a-D",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+E",
+				"command": "kakoune-mode.type.a-E",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+F",
+				"command": "kakoune-mode.type.a-F",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+G",
+				"command": "kakoune-mode.type.a-G",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+H",
+				"command": "kakoune-mode.type.a-H",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+I",
+				"command": "kakoune-mode.type.a-I",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+J",
+				"command": "kakoune-mode.type.a-J",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+K",
+				"command": "kakoune-mode.type.a-K",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+L",
+				"command": "kakoune-mode.type.a-L",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+M",
+				"command": "kakoune-mode.type.a-M",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+N",
+				"command": "kakoune-mode.type.a-N",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+O",
+				"command": "kakoune-mode.type.a-O",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+P",
+				"command": "kakoune-mode.type.a-P",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+Q",
+				"command": "kakoune-mode.type.a-Q",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+R",
+				"command": "kakoune-mode.type.a-R",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+S",
+				"command": "kakoune-mode.type.a-S",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+T",
+				"command": "kakoune-mode.type.a-T",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+U",
+				"command": "kakoune-mode.type.a-U",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+V",
+				"command": "kakoune-mode.type.a-V",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+W",
+				"command": "kakoune-mode.type.a-W",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+X",
+				"command": "kakoune-mode.type.a-X",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+Y",
+				"command": "kakoune-mode.type.a-Y",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
+			},
+			{
+				"key": "Shift+Alt+Z",
+				"command": "kakoune-mode.type.a-Z",
+				"when": "editorTextFocus && resourceScheme == file || resourceScheme == untitled"
 			}
 		]
 	},
