@@ -1,6 +1,14 @@
 type disposable
-type position
-type selection
+
+type position = {
+  character: int,
+  line: int,
+}
+
+type selection = {
+  active: position,
+  anchor: position,
+}
 
 type range = {
   start: position,

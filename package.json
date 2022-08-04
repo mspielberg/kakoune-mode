@@ -14,13 +14,8 @@
 	],
 	"main": "./src/Extension.bs.js",
 	"contributes": {
-		"commands": [
-			{
-				"command": "extension.helloWorld",
-				"title": "Hello World"
-			}
-		],
 		"configurationDefaults": {
+			"files.autoSave": "off",
 			"editor.autoClosingBrackets": "never"
 		},
 		"keybindings": [

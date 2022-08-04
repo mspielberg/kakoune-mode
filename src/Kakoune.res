@@ -16,6 +16,28 @@ let writeKeys = keys => keys->Rpc.KeysMessage.make->writeToKak
 let querySelections = () =>
   writeKeys(":echo kakoune-mode selections: %val{selections_display_column_desc}<ret>")
 
+let getAtomStartColumns = (line: KakouneTypes.Line.t) => line->Js.Array2.reduce((starts, atom) => {
+  switch starts->Js.Array2.pop {
+  | None => [0] // first atom starts at column 0
+  | Some(prev) =>
+    starts->Js.Array2.push(prev)->ignore
+    starts->Js.Array2.push(prev + atom.contents->Js.String2.length)->ignore
+    starts
+  }
+}, [])
+
+let isCursorFace = (face: KakouneTypes.Face.t) =>
+  face.fg == "black" && (face.bg == "white" || face.bg == "cyan")
+
+let getCursorPositionFromLine = (line: KakouneTypes.Line.t) => {
+  let index = line->Js.Array2.findIndex(a => a.face->isCursorFace)
+  if index < 0 {
+    None
+  } else {
+    Some(getAtomStartColumns(line)[index])
+  }
+}
+
 let getSelectionsFromStatusLine = (statusLine: KakouneTypes.Line.t) => {
   let prefix = "kakoune-mode selections: "
   if Js.Array2.length(statusLine) > 0 {
@@ -25,7 +47,6 @@ let getSelectionsFromStatusLine = (statusLine: KakouneTypes.Line.t) => {
       contents
       ->Js.String2.substr(~from=prefix->Js.String2.length)
       ->selectionsFromDescString
-      ->Js.Array2.map(toVscode)
       ->Some
     } else {
       None
@@ -54,21 +75,21 @@ let updatePrompt = (statusLine: KakouneTypes.Line.t) => {
   Vscode.showPrompt(prompt, content, writeKeys)
 }
 
-let processDraw = (lines: array<KakouneTypes.Line.t>) =>
-  switch Mode.getMode() {
-  | _ => 
-    lines
-    ->Js.Array2.map(KakouneTypes.Line.getText)
-    ->Js.String2.concatMany("", _)
-    ->Vscode.replaceAll
-  }
+let drawBuffer: ref<array<KakouneTypes.Line.t>> = ref([])
+
+let processDraw = (lines: array<KakouneTypes.Line.t>) => {
+  drawBuffer.contents = lines
+  Promise.resolve()
+}
+
+let currentSelections: ref<array<KakouneTypes.Selection.t>> = ref([])
 
 let processDrawStatus = (statusLine, modeLine) => {
   let newMode = modeLine->getModeFromModeLine
   newMode->Mode.setMode
   newMode->Vscode.updateCursorStyle
   switch statusLine->getSelectionsFromStatusLine {
-  | Some(selections) => Vscode.setSelections(selections)
+  | Some(selections) => currentSelections.contents = selections
   | None => switch Mode.getMode() {
     | Mode.Normal => querySelections()
     | Mode.Unknown
@@ -108,6 +129,44 @@ let processInfoShow = (title, content, infoStyle) => {
   Promise.resolve()
 }
 
+let trimLeft = (lines, n) => {
+  lines
+  ->Js.Array2.map(line =>
+    line
+    ->KakouneTypes.Line.getText
+    ->Js.String2.substringToEnd(~from=n)
+  )
+  ->Js.Array2.joinWith("")
+}
+
+let processRefresh = () => {
+  if currentSelections.contents->Js.Array2.length > 0 {
+    Some(currentSelections.contents[0])
+  } else {
+    None
+  }
+  ->Belt.Option.flatMap(mainSelection => {
+    drawBuffer.contents[mainSelection.cursor.line]
+      ->getCursorPositionFromLine
+      ->Belt.Option.map(column => {
+        let columnOffset = mainSelection.cursor.column - column
+        drawBuffer.contents
+        ->trimLeft(columnOffset)
+        ->Vscode.replaceAll
+        ->Promise.thenResolve(_ =>
+          currentSelections.contents
+          ->Js.Array2.map(KakouneTypes.Selection.toVscode)
+          ->Vscode.setSelections
+        )
+        ->Promise.catch(e => {
+          Js.log2("replaceAll failed", e)
+          Promise.resolve()
+        })
+      })
+  })
+  ->Belt.Option.getWithDefault(Promise.resolve())
+}
+
 let processSetCursor = (mode, coord) => {
   if mode == "buffer" && Mode.getMode() == Mode.Insert {
     let vscodePosition = coord->KakouneTypes.Coord.toVscode
@@ -126,6 +185,8 @@ let processCommand = (msg: string) => {
     | Some(InfoHide) => processInfoHide()
     | Some(InfoShow({title: title, content: content, style: style})) =>
       processInfoShow(title, content, style)
+    | Some(Refresh) =>
+      processRefresh()
     | Some(SetCursor({mode: mode, coord: coord})) =>
       processSetCursor(mode, coord)
     | None => Promise.resolve()
@@ -144,5 +205,10 @@ let handleIncomingCommand = command =>
   command
   ->Js.String2.fromCharCodeMany
   ->Rpc.InputBuffer.push(msg => {
-    pendingCommand.contents = pendingCommand.contents->Promise.then(_ => processCommand(msg))
+    pendingCommand.contents = pendingCommand.contents
+      ->Promise.then(_ => processCommand(msg))
+      ->Promise.catch(e => {
+        Js.log3("command handler failed", msg, e)
+        Promise.resolve()
+      })
   })

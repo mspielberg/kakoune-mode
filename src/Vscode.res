@@ -78,6 +78,7 @@ module TextEditor = {
 
   let document = () => activeTextEditor()->Belt.Option.map(t => t.document)
 
+  @get external getSelection: t => selection = "selection"
   @set external setSelection: (t, selection) => unit = "selection"
   @get external getSelections: t => array<selection> = "selections"
   @set external setSelections: (t, array<selection>) => unit = "selections"

@@ -40,6 +40,7 @@ module UIRequest = {
     |DrawStatus({statusLine: Line.t, modeLine: Line.t, defaultFace: Face.t})
     |InfoShow({title: Line.t, content: array<Line.t>, anchor: Coord.t, face: Face.t, style: infoStyle})
     |InfoHide
+    |Refresh
     |SetCursor({mode: string, coord: Coord.t})
 
   module Decode = {
@@ -146,6 +147,7 @@ module UIRequest = {
     | "draw_status" => Some(drawStatus)
     | "info_hide" => Some((_) => InfoHide)
     | "info_show" => Some(infoShow)
+    | "refresh" => Some((_) => Refresh)
     | "set_cursor" => Some(setCursor)
     | _ => None
     }
