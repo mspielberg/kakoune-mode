@@ -77,9 +77,9 @@ module Coord = {
     column: p.column + 1,
   }
 
-  let isAfter = (p1, p2) =>
-    p1.line > p2.line
-    || p1.line == p2.line && p1.column > p2.column
+  let isBefore = (p1, p2) =>
+    p1.line < p2.line
+    || p1.line == p2.line && p1.column < p2.column
 }
 
 module Selection = {
@@ -88,7 +88,7 @@ module Selection = {
     cursor: Coord.t,
   }
 
-  let isForward = s => s.cursor->Coord.isAfter(s.anchor)
+  let isBackward = s => s.cursor->Coord.isBefore(s.anchor)
 
   let selectionsFromDescString = desc => {
     let fromDescString = desc => {

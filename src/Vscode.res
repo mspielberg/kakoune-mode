@@ -131,13 +131,13 @@ module Selection = {
   @get external end_: t => position = "end"
 
   let fromKakoune = selection =>
-    if KakouneTypes.Selection.isForward(selection) {
+    if KakouneTypes.Selection.isBackward(selection) {
       make(
-        ~anchor=selection.anchor->Position.fromKakoune,
+        ~anchor=selection.anchor->KakouneTypes.Coord.successor->Position.fromKakoune,
         ~active=selection.cursor->Position.fromKakoune)
     } else {
       make(
-        ~anchor=selection.anchor->KakouneTypes.Coord.successor->Position.fromKakoune,
+        ~anchor=selection.anchor->Position.fromKakoune,
         ~active=selection.cursor->Position.fromKakoune)
     }
 }

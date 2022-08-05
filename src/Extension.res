@@ -8,7 +8,7 @@ let activate = context => {
   Kakoune.getKak().stdout.on(. "data", data => Kakoune.handleIncomingCommand(data)->ignore)
   Kakoune.writeToKak->Kakoune.initKak
 
-  Vscode.overrideTypeCommand(context, Kakoune.writeKeys)
+  Vscode.overrideTypeCommand(context, text => Kakoune.writeKeys(text))
   Vscode.Commands.registerCommand("extension.send_escape", () => Kakoune.writeKeys("<esc>"))
   ->Js.Array.push(context.subscriptions)
   ->ignore

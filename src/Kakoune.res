@@ -11,20 +11,38 @@ let writeToKak = message => {
   getKak().stdin.write(. message->Rpc.Message.serialize)
 }
 
-let writeKeys = keys => keys->Rpc.KeysMessage.make->writeToKak
+let needSelectionsUpdate = ref(true)
 
-let querySelections = () =>
-  writeKeys(":echo kakoune-mode selections: %val{selections_display_column_desc}<ret>")
+let writeKeysInternal = keys => keys->Rpc.KeysMessage.make->writeToKak
+
+let writeKeys = keys => {
+  writeKeysInternal(keys)
+  needSelectionsUpdate.contents = true
+}
+
+let querySelections = () => switch Mode.getMode() {
+| Mode.Normal => writeKeysInternal(":echo kakoune-mode selections: %val{selections_display_column_desc}<ret>")
+| Mode.Insert => writeKeysInternal("<a-;>:echo kakoune-mode selections: %val{selections_display_column_desc}<ret>")
+| _ => ()
+}
+
+let clearSelectionsOutput = () => switch Mode.getMode() {
+| Mode.Normal => writeKeysInternal("<esc>")
+| Mode.Insert => writeKeysInternal("<a-;><esc>")
+| _ => ()
+}
 
 let getAtomStartColumns = (line: KakouneTypes.Line.t) => line->Js.Array2.reduce((starts, atom) => {
-  switch starts->Js.Array2.pop {
-  | None => [0] // first atom starts at column 0
-  | Some(prev) =>
-    starts->Js.Array2.push(prev)->ignore
-    starts->Js.Array2.push(prev + atom.contents->Js.String2.length)->ignore
-    starts
-  }
-}, [])
+    open Js.Array2
+    if length(starts) == 0 {
+      [(0, Js.String2.length(atom.contents))] // first atom starts at column 0
+    } else {
+      let (prevStart, prevEnd) = starts[length(starts) - 1]
+      starts->push((prevStart + prevEnd, prevEnd + atom.contents->Js.String2.length))->ignore
+      starts
+    }
+  }, [])
+  ->Js.Array2.map(((start, _)) => start)
 
 let isCursorFace = (face: KakouneTypes.Face.t) =>
   face.fg == "black" && (face.bg == "white" || face.bg == "cyan")
@@ -89,10 +107,12 @@ let processDrawStatus = (statusLine, modeLine) => {
   newMode->Mode.setMode
   newMode->Vscode.updateCursorStyle
   switch statusLine->getSelectionsFromStatusLine {
-  | Some(selections) => currentSelections.contents = selections
+  | Some(selections) =>
+    currentSelections.contents = selections
+    clearSelectionsOutput()
   | None => switch Mode.getMode() {
-    | Mode.Normal => querySelections()
     | Mode.Unknown
+    | Mode.Normal
     | Mode.Insert
     | Mode.EnterKey => ()
     | Mode.Prompt => updatePrompt(statusLine)
@@ -140,31 +160,37 @@ let trimLeft = (lines, n) => {
 }
 
 let processRefresh = () => {
-  if currentSelections.contents->Js.Array2.length > 0 {
-    Some(currentSelections.contents[0])
+  if needSelectionsUpdate.contents {
+    querySelections()
+    needSelectionsUpdate.contents = false
+    Promise.resolve()
   } else {
-    None
-  }
-  ->Belt.Option.flatMap(mainSelection => {
-    drawBuffer.contents[mainSelection.cursor.line]
-      ->getCursorPositionFromLine
-      ->Belt.Option.map(column => {
-        let columnOffset = mainSelection.cursor.column - column
-        drawBuffer.contents
-        ->trimLeft(columnOffset)
-        ->Vscode.replaceAll
-        ->Promise.thenResolve(_ =>
-          currentSelections.contents
-          ->Js.Array2.map(Vscode.Selection.fromKakoune)
-          ->Vscode.setSelections
-        )
-        ->Promise.catch(e => {
-          Js.log2("replaceAll failed", e)
-          Promise.resolve()
+    if currentSelections.contents->Js.Array2.length > 0 {
+      Some(currentSelections.contents[0])
+    } else {
+      None
+    }
+    ->Belt.Option.flatMap(mainSelection => {
+      drawBuffer.contents[mainSelection.cursor.line]
+        ->getCursorPositionFromLine
+        ->Belt.Option.map(column => {
+          let columnOffset = mainSelection.cursor.column - column
+          drawBuffer.contents
+          ->trimLeft(columnOffset)
+          ->Vscode.replaceAll
+          ->Promise.thenResolve(_ =>
+            currentSelections.contents
+            ->Js.Array2.map(Vscode.Selection.fromKakoune)
+            ->Vscode.setSelections
+          )
+          ->Promise.catch(e => {
+            Js.log2("replaceAll failed", e)
+            Promise.resolve()
+          })
         })
-      })
-  })
-  ->Belt.Option.getWithDefault(Promise.resolve())
+    })
+    ->Belt.Option.getWithDefault(Promise.resolve())
+  }
 }
 
 let processSetCursor = (mode, coord) => {
