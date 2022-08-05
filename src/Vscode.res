@@ -116,6 +116,8 @@ module Position = {
   external make: (~line: int, ~character: int) => t = "Position"
   @get external character: t => int = "character"
   @get external line: t => int = "line"
+
+  let fromKakoune = (coord: KakouneTypes.Coord.t) => make(~line=coord.line, ~character=coord.column)
 }
 
 module Selection = {
@@ -127,6 +129,17 @@ module Selection = {
   @get external active: t => position = "active"
   @get external start: t => position = "start"
   @get external end_: t => position = "end"
+
+  let fromKakoune = selection =>
+    if KakouneTypes.Selection.isForward(selection) {
+      make(
+        ~anchor=selection.anchor->Position.fromKakoune,
+        ~active=selection.cursor->Position.fromKakoune)
+    } else {
+      make(
+        ~anchor=selection.anchor->KakouneTypes.Coord.successor->Position.fromKakoune,
+        ~active=selection.cursor->Position.fromKakoune)
+    }
 }
 
 let createChannel = (context) => {

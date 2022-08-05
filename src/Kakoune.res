@@ -155,7 +155,7 @@ let processRefresh = () => {
         ->Vscode.replaceAll
         ->Promise.thenResolve(_ =>
           currentSelections.contents
-          ->Js.Array2.map(KakouneTypes.Selection.toVscode)
+          ->Js.Array2.map(Vscode.Selection.fromKakoune)
           ->Vscode.setSelections
         )
         ->Promise.catch(e => {
@@ -169,7 +169,7 @@ let processRefresh = () => {
 
 let processSetCursor = (mode, coord) => {
   if mode == "buffer" && Mode.getMode() == Mode.Insert {
-    let vscodePosition = coord->KakouneTypes.Coord.toVscode
+    let vscodePosition = coord->Vscode.Position.fromKakoune
     Vscode.Selection.make(~anchor=vscodePosition, ~active=vscodePosition)
     ->Vscode.setSelection
   }
