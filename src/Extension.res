@@ -1,12 +1,7 @@
 let activate = context => {
-  switch Vscode.TextEditor.document() {
-  | None => Node.spawn("kak", ["-ui", "json", "-s", "vscode"])->Kakoune.setKak
-  | Some(doc) => Node.spawn("kak", ["-ui", "json", "-s", "vscode", doc.fileName])->Kakoune.setKak
-  }
-
-  Kakoune.getKak().stderr.on(. "data", Kakoune.handleIncomingError)
-  Kakoune.getKak().stdout.on(. "data", data => Kakoune.handleIncomingCommand(data)->ignore)
-  Kakoune.writeToKak->Kakoune.initKak
+  let filename = Vscode.TextEditor.document()
+    ->Belt.Option.map(d => d.fileName)
+  Kakoune.initKak(filename)
 
   Vscode.overrideTypeCommand(context, text => Kakoune.writeKeys(text))
   Vscode.Commands.registerCommand("extension.send_escape", () => Kakoune.writeKeys("<esc>"))

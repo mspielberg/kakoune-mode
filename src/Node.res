@@ -2,10 +2,12 @@ type stream_data = {data: bytes}
 
 type process_stream = {
   on: (. string, array<int> => unit) => unit,
-  write: (. string) => unit,
+  write: (. string) => bool,
 }
 
 type child_process = {
+  exitCode: option<int>,
+  pid: int,
   stdout: process_stream,
   stderr: process_stream,
   stdin: process_stream,
@@ -16,11 +18,11 @@ module ChildProcess = {
 
   let setupLoggers = child => {
     Js.log2(child, "spawning")
-    child->on("close", _ => Js.log2(child, "closed"))
-    child->on("disconnect", _ => Js.log2(child, "disconnected"))
-    child->on("exit", _ => Js.log2(child, "exited"))
-    child->on("spawn", _ => Js.log2(child, "spawned"))
-    child->on("error", _ => Js.log2(child, "error"))
+    child->on("close", _ => Js.log3(child, "closed", child.pid))
+    child->on("disconnect", _ => Js.log3(child, "disconnected", child.pid))
+    child->on("exit", _ => Js.log3(child, "exited", child.pid))
+    child->on("spawn", _ => Js.log3(child, "spawned", child.pid))
+    child->on("error", _ => Js.log3(child, "error", child.pid))
   }
 }
 

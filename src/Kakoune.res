@@ -1,35 +1,45 @@
-let initKak = writeToKak => Rpc.ResizeMessage.make()->writeToKak
+let editorSession = ref(ClientSession.make(
+  [ "-clear" ],
+))
 
-let kak = ref(Node.spawn("kak", ["-clear"]))
-
-let getKak = () => kak.contents
-
-let setKak = newKak => kak := newKak
+let outputSession = ClientSession.make(
+  [
+    "-ui", "json",
+    "-c" , "vscode",
+    "-e", "rename-client vscodeoutput",
+  ],
+)
 
 let writeToKak = message => {
   Js.log2("kak <", message)
-  getKak().stdin.write(. message->Rpc.Message.serialize)
+  editorSession.contents
+    ->ClientSession.write(message->Rpc.Message.serialize)
 }
 
-let needSelectionsUpdate = ref(true)
+type selectionUpdateState =
+| ReadyToDraw
+| NeedUpdate
+| AwaitingSelections
+
+let needSelectionsUpdate = ref(NeedUpdate)
 
 let writeKeysInternal = keys => keys->Rpc.KeysMessage.make->writeToKak
 
 let writeKeys = keys => {
   writeKeysInternal(keys)
-  needSelectionsUpdate.contents = true
+  needSelectionsUpdate.contents = NeedUpdate
 }
 
-let querySelections = () => switch Mode.getMode() {
-| Mode.Normal => writeKeysInternal(":echo kakoune-mode selections: %val{selections_display_column_desc}<ret>")
-| Mode.Insert => writeKeysInternal("<a-;>:echo kakoune-mode selections: %val{selections_display_column_desc}<ret>")
-| _ => ()
-}
+let querySelectionsCommand = ":evaluate-commands -client vscodeoutput echo kakoune-mode selections: %val{selections_char_desc}<ret>"
 
-let clearSelectionsOutput = () => switch Mode.getMode() {
-| Mode.Normal => writeKeysInternal("<esc>")
-| Mode.Insert => writeKeysInternal("<a-;><esc>")
-| _ => ()
+let querySelections = () => {
+  outputSession->ClientSession.start->ignore
+  switch Mode.getMode() {
+  | Mode.Normal => writeKeysInternal(querySelectionsCommand)
+  | Mode.Insert => writeKeysInternal("<a-;>" ++ querySelectionsCommand)
+  | _ => ()
+  }
+  needSelectionsUpdate.contents = AwaitingSelections
 }
 
 let getAtomStartColumns = (line: KakouneTypes.Line.t) => line->Js.Array2.reduce((starts, atom) => {
@@ -100,23 +110,28 @@ let processDraw = (lines: array<KakouneTypes.Line.t>) => {
   Promise.resolve()
 }
 
-let currentSelections: ref<array<KakouneTypes.Selection.t>> = ref([])
-
 let processDrawStatus = (statusLine, modeLine) => {
   let newMode = modeLine->getModeFromModeLine
   newMode->Mode.setMode
   newMode->Vscode.updateCursorStyle
+  switch Mode.getMode() {
+  | Mode.Unknown
+  | Mode.Normal
+  | Mode.Insert
+  | Mode.EnterKey => ()
+  | Mode.Prompt => updatePrompt(statusLine)
+  }
+  Promise.resolve()
+}
+
+let currentSelections: ref<array<KakouneTypes.Selection.t>> = ref([])
+
+let processOutputDrawStatus = (statusLine, _) => {
   switch statusLine->getSelectionsFromStatusLine {
   | Some(selections) =>
     currentSelections.contents = selections
-    clearSelectionsOutput()
-  | None => switch Mode.getMode() {
-    | Mode.Unknown
-    | Mode.Normal
-    | Mode.Insert
-    | Mode.EnterKey => ()
-    | Mode.Prompt => updatePrompt(statusLine)
-    }
+    needSelectionsUpdate.contents = ReadyToDraw
+  | _ => ()
   }
   Promise.resolve()
 }
@@ -159,12 +174,13 @@ let trimLeft = (lines, n) => {
   ->Js.Array2.joinWith("")
 }
 
-let processRefresh = () => {
-  if needSelectionsUpdate.contents {
+let processRefresh = () => switch needSelectionsUpdate.contents {
+  | NeedUpdate =>
     querySelections()
-    needSelectionsUpdate.contents = false
     Promise.resolve()
-  } else {
+  | AwaitingSelections =>
+    Promise.resolve()
+  | ReadyToDraw =>
     if currentSelections.contents->Js.Array2.length > 0 {
       Some(currentSelections.contents[0])
     } else {
@@ -190,7 +206,6 @@ let processRefresh = () => {
         })
     })
     ->Belt.Option.getWithDefault(Promise.resolve())
-  }
 }
 
 let processSetCursor = (mode, coord) => {
@@ -202,39 +217,39 @@ let processSetCursor = (mode, coord) => {
   Promise.resolve()
 }
 
-let processCommand = (msg: string) => {
-  let parsed = msg->Rpc.UIRequest.parse
-  switch parsed {
-    | Some(Draw({lines: lines})) => processDraw(lines)
-    | Some(DrawStatus({statusLine: statusLine, modeLine: modeLine})) =>
-      processDrawStatus(statusLine, modeLine)
-    | Some(InfoHide) => processInfoHide()
-    | Some(InfoShow({title: title, content: content, style: style})) =>
-      processInfoShow(title, content, style)
-    | Some(Refresh) =>
-      processRefresh()
-    | Some(SetCursor({mode: mode, coord: coord})) =>
-      processSetCursor(mode, coord)
-    | None => Promise.resolve()
+let processCommand = (req: Rpc.UIRequest.t) => switch req {
+| Draw({lines: lines}) => processDraw(lines)
+| DrawStatus({statusLine: statusLine, modeLine: modeLine}) =>
+  processDrawStatus(statusLine, modeLine)
+| InfoHide => processInfoHide()
+| InfoShow({title: title, content: content, style: style}) =>
+  processInfoShow(title, content, style)
+| Refresh =>
+  processRefresh()
+| SetCursor({mode: mode, coord: coord}) =>
+  processSetCursor(mode, coord)
+}
+
+let processOutputSessionRequest = (req: Rpc.UIRequest.t) => switch req {
+| DrawStatus({statusLine: statusLine, modeLine: modeLine}) =>
+  processOutputDrawStatus(statusLine, modeLine)
+| Refresh =>
+  processRefresh()
+| _ => Promise.resolve()
+}
+
+let initKak = (filenameOpt: option<string>) => {
+  let args = switch filenameOpt {
+  | Some(filename) => [ "-ui", "json", "-s", "vscode", filename ]
+  | None => [ "-ui", "json", "-s", "vscode" ]
   }
+  let session = ClientSession.make(args)
+  editorSession.contents = session
+  session
+    ->ClientSession.setHandler(processCommand)
+    ->ClientSession.start
+    ->ignore
+  outputSession
+    ->ClientSession.setHandler(processOutputSessionRequest)
+    ->ignore
 }
-
-let handleIncomingError = error => {
-  let str = error->Js.String2.fromCharCodeMany
-  Js.log2("kakerr >", str)
-  str->Vscode.Window.showError
-}
-
-let pendingCommand = ref(Promise.resolve())
-
-let handleIncomingCommand = command =>
-  command
-  ->Js.String2.fromCharCodeMany
-  ->Rpc.InputBuffer.push(msg => {
-    pendingCommand.contents = pendingCommand.contents
-      ->Promise.then(_ => processCommand(msg))
-      ->Promise.catch(e => {
-        Js.log3("command handler failed", msg, e)
-        Promise.resolve()
-      })
-  })

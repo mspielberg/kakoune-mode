@@ -1,10 +1,10 @@
 module Message = {
-  type t<'a> = {
+  type t = {
     method: string,
-    params: 'a
+    params: array<Js.Json.t>,
   }
 
-  let serialize = (t: t<'a>) => {
+  let serialize = t => {
     "jsonrpc": "2.0",
     "method": t.method,
     "params": t.params
@@ -159,32 +159,17 @@ module KeysMessage = {
   let make = keys => {
     Message.method: "keys",
     Message.params: [
-      keys->Js.String2.replaceByRe(%re("/\\n/g"), "<ret>")
+      keys->Js.String2.replaceByRe(%re("/\\n/g"), "<ret>")->Js.Json.string
     ],
   }
 }
 
 module ResizeMessage = {
+  let maxInt = Js.Int.max->Js.Int.toFloat->Js.Json.number
   let make = () => {
     {
       Message.method: "resize",
-      Message.params: [Js.Int.max, Js.Int.max]
-    }
-  }
-}
-
-module InputBuffer = {
-  type t
-  let mbuf = Js.Vector.make
-  let buf = ref("")
-  let push = (str, f) => {
-    buf.contents = buf.contents ++ str
-    let index = ref(Js.String2.indexOf(buf.contents, "\n"))
-    while index.contents >= 0 {
-      let msg = buf.contents->Js.String2.substring(~from=0, ~to_=index.contents)
-      f(msg)
-      buf.contents = buf.contents->Js.String2.substr(~from=index.contents + 1)
-      index.contents = Js.String2.indexOf(buf.contents, "\n")
+      Message.params: [ maxInt, maxInt ],
     }
   }
 }
