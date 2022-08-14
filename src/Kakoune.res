@@ -21,6 +21,8 @@ type selectionUpdateState =
 | NeedUpdate
 | AwaitingSelections
 
+let escapeKeys = keys => keys->Js.String2.replaceByRe(%re("/</g"), "<lt>")
+
 let needSelectionsUpdate = ref(NeedUpdate)
 
 let writeKeysInternal = keys => keys->Rpc.KeysMessage.make->writeToKak
@@ -30,16 +32,25 @@ let writeKeys = keys => {
   needSelectionsUpdate.contents = NeedUpdate
 }
 
+let querySelectionsKey = "<a-c-s-F12>"
+
 let querySelectionsCommand = ":evaluate-commands -client vscodeoutput echo kakoune-mode selections: %val{selections_char_desc}<ret>"
+
+let configureQuerySelectionsMappings = () => {
+  writeKeysInternal(`:map global insert ${escapeKeys(querySelectionsKey)} %{${escapeKeys("<a-;>" ++ querySelectionsCommand)}}<ret>`)
+  writeKeysInternal(`:map global normal ${escapeKeys(querySelectionsKey)} %{${escapeKeys(querySelectionsCommand)}}<ret>`)
+  writeKeysInternal(`:map global prompt ${escapeKeys(querySelectionsKey)} %{${escapeKeys("<a-;>" ++ querySelectionsCommand)}}<ret>`)
+}
 
 let querySelections = () => {
   outputSession->ClientSession.start->ignore
   switch Mode.getMode() {
-  | Mode.Normal => writeKeysInternal(querySelectionsCommand)
-  | Mode.Insert => writeKeysInternal("<a-;>" ++ querySelectionsCommand)
+  | Mode.Normal
+  | Mode.Insert =>
+      writeKeysInternal(querySelectionsKey)
+      needSelectionsUpdate.contents = AwaitingSelections
   | _ => ()
   }
-  needSelectionsUpdate.contents = AwaitingSelections
 }
 
 let getAtomStartColumns = (line: KakouneTypes.Line.t) => line->Js.Array2.reduce((starts, atom) => {
@@ -257,4 +268,5 @@ let initKak = (filenameOpt: option<string>) => {
     ->ClientSession.setHandler(processOutputSessionRequest)
     ->ignore
   writeToKak(Rpc.ResizeMessage.make())
+  configureQuerySelectionsMappings()
 }
