@@ -282,24 +282,26 @@ let showEnterKeyPrompt = (title, options, writeKeys) => {
 }
 
 let showPrompt = (title, value, writeKeys) => {
+  open Belt.Option
   open QuickPick
-  if activePrompt.contents->Belt.Option.isNone {
+  if isNone(activePrompt.contents) {
     let prompt = make()
     activePrompt.contents = Some(prompt)
-    prompt->QuickPick.onDidAccept(() => {
+    prompt->onDidAccept(() => {
       hidePrompt()
       writeKeys("<ret>")
     })
-    prompt->onDidChangeValue(newValue => writeKeys("<c-u>" ++ newValue))
+    prompt->onDidChangeValue(newValue => writeKeys(
+      "<c-u>" ++ Js.String2.replaceByRe(newValue, %re("/</g"), "<lt>")))
     prompt->onDidHide(() => {
-      if Belt.Option.isSome(activePrompt.contents) {
+      if isSome(activePrompt.contents) {
         activePrompt.contents = None
         writeKeys("<esc>")
       }
     })
     prompt->show
   }
-  let prompt = Belt.Option.getExn(activePrompt.contents)
+  let prompt = getExn(activePrompt.contents)
   if prompt.title != title {
     prompt->setTitle(title)
   }
