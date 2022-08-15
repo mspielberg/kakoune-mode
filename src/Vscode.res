@@ -55,6 +55,12 @@ module QuickPick = {
   @send external show: t => unit = "show"
 }
 
+module TextDocument = {
+  type t = textDocument
+
+  @send external getText: t => string = "getText"
+}
+
 module TextEditor = {
   type t = textEditor
   type editBuilder
@@ -85,6 +91,8 @@ module TextEditor = {
   @send external edit: (t, editBuilder => unit, editOptions) => Promise.t<bool> = "edit"
   @send external revealRange: (t, range) => unit = "revealRange"
 
+  @send external delete: (editBuilder, range) => unit = "delete"
+  @send external insert: (editBuilder, position, string) => unit = "insert"
   @send external replace: (editBuilder, selection, string) => unit = "replace"
 }
 
@@ -119,11 +127,29 @@ module Position = {
   @get external line: t => int = "line"
 
   let fromKakoune = (coord: KakouneTypes.Coord.t) => make(~line=coord.line, ~character=coord.column)
+
+  let advance = (t, s: string) => {
+    let lineFragments = s->Js.String2.split("\n")
+    let newLine = t.line + Js.Array2.length(lineFragments) - 1
+    let newCharacter = if newLine == t.line {
+      t.character + Js.String2.length(s)
+    } else {
+      Js.String2.length(lineFragments[Js.Array2.length(lineFragments) - 1])
+    }
+    make(~line=newLine, ~character=newCharacter)
+  }
+
+  let start = make(~line=0, ~character=0)
 }
 
 module Range = {
+  type t = range
+
   @module("vscode") @new
   external make: (~start: position, ~end: position) => range = "Range"
+
+  let fromPosition = (t, s: string) =>
+    make(~start=t, ~end=t->Position.advance(s))
 }
 
 module Selection = {
@@ -220,31 +246,57 @@ let setSelections = selections => {
   }
 }
 
+let createEditOps = (before, after): array<(TextEditor.editBuilder) => unit> => {
+  let createOp = (accu, op: FastDiff.op) => {
+    let (ops, pos) = accu
+    switch op.opType {
+    | Equal => (ops, pos->Position.advance(op.s))
+    | Insert =>
+      Js.log3("add INSERT", pos, op.s)
+      ops
+        ->Js.Array2.push(
+          textEditorEdit => textEditorEdit->TextEditor.insert(pos, op.s))
+        ->ignore
+      (ops, pos->Position.advance(op.s))
+    | Delete =>
+      let deleteRange = Range.fromPosition(pos, op.s)
+      Js.log2("add DELETE range", deleteRange)
+      ops
+        ->Js.Array2.push(
+          textEditorEdit => textEditorEdit->TextEditor.delete(deleteRange))
+        ->ignore
+      (ops, pos->Position.advance(op.s))
+    }
+  }
+  let (ops, _) = FastDiff.diff(before, after)->Js.Array2.reduce(createOp, ([], Position.start))
+  ops
+}
+
 let replaceAll = text => {
   TextEditor.activeTextEditor()->Belt.Option.map(ed => {
-    let selection = Selection.make(
-      ~anchor=Position.make(~line=0, ~character=0),
-      ~active=Position.make(~line=Js.Int.max, ~character=0))
-    let cb = textEditorEdit =>
-      textEditorEdit->TextEditor.replace(
-        selection,
-        text->Js.String2.substring(~from=0, ~to_=Js.String2.length(text) - 1))
-    let rec runEdit = (retries) => {
-      ed
-      ->TextEditor.edit(cb, {
-        undoStopBefore: false,
-        undoStopAfter: false,
-      })
-      ->Promise.then(success => {
-         if !success {
-          runEdit(retries + 1)
-        } else {
-          Promise.resolve(retries)
-        }
-      })
+    let rec runEdit = (attempts) => {
+      let before = ed.document->TextDocument.getText
+      let ops = createEditOps(before, text)
+      let cb = textEditorEdit => ops->Js.Array2.forEach(f => f(textEditorEdit))
+      if Js.Array2.length(ops) == 0 {
+        Promise.resolve(0)
+      } else {
+        ed
+        ->TextEditor.edit(cb, {
+          undoStopBefore: false,
+          undoStopAfter: false,
+        })
+        ->Promise.then(success => {
+           if !success {
+            runEdit(attempts + 1)
+          } else {
+            Promise.resolve(attempts)
+          }
+        })
+      }
     }
-    runEdit(0)->PromiseUtil.timeWithResult->Promise.then(((retries, elapsed)) => {
-      Js.log(`runEdit() completed after ${Js.Int.toString(retries)} retr${retries == 1 ? "y" : "ies"} (${Js.Float.toFixedWithPrecision(elapsed *. 1000., ~digits=1)} ms)`)
+    runEdit(1)->PromiseUtil.timeWithResult->Promise.then(((attempts, elapsed)) => {
+        Js.log(`runEdit() completed after ${Js.Int.toString(attempts)} attempt${attempts == 1 ? "" : "s"} (${Js.Float.toFixedWithPrecision(elapsed *. 1000., ~digits=1)} ms)`)
       Promise.resolve()
     })
   })

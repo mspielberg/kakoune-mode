@@ -12,8 +12,10 @@ let outputSession = ClientSession.make(
 
 let writeToKak = message => {
   Js.log2("kak <", message)
+  let serialized = Rpc.Message.serialize(message)
+  Js.log2("JSONRPC <", serialized)
   editorSession.contents
-    ->ClientSession.write(message->Rpc.Message.serialize)
+    ->ClientSession.write(serialized)
 }
 
 type selectionUpdateState =
@@ -192,11 +194,14 @@ let trimLeft = (lines, n) => {
 
 let processRefresh = () => switch needSelectionsUpdate.contents {
   | NeedUpdate =>
+    Js.log("NeedUpdate")
     querySelections()
     Promise.resolve()
   | AwaitingSelections =>
+    Js.log("AwaitingSelections")
     Promise.resolve()
   | ReadyToDraw =>
+    Js.log("ReadyToDraw")
     if currentSelections.contents->Js.Array2.length > 0 {
       Some(currentSelections.contents[0])
     } else {
