@@ -1,8 +1,10 @@
 let editorSession = ref(ClientSession.make(
+  "dummy",
   [ "-clear" ],
 ))
 
 let outputSession = ClientSession.make(
+  "out",
   [
     "-ui", "json",
     "-c" , "vscode",
@@ -13,7 +15,7 @@ let outputSession = ClientSession.make(
 let writeToKak = message => {
   Js.log2("kak <", message)
   let serialized = Rpc.Message.serialize(message)
-  Js.log2("JSONRPC <", serialized)
+  // Js.log2("JSONRPC <", serialized)
   editorSession.contents
     ->ClientSession.write(serialized)
 }
@@ -58,16 +60,11 @@ let querySelections = () => {
 }
 
 let getAtomStartColumns = (line: KakouneTypes.Line.t) => line->Js.Array2.reduce((starts, atom) => {
-    open Js.Array2
-    if length(starts) == 0 {
-      [(0, Js.String2.length(atom.contents))] // first atom starts at column 0
-    } else {
-      let (_, prevEnd) = starts[length(starts) - 1]
-      starts->push((prevEnd, prevEnd + Js.String2.length(atom.contents)))->ignore
-      starts
-    }
-  }, [])
-  ->Js.Array2.map(((start, _)) => start)
+    let prevEnd = starts[Js.Array2.length(starts) - 1]
+    starts->Js.Array2.push(prevEnd + Js.String2.length(atom.contents))->ignore
+    starts
+  }, [0])
+  ->Js.Array2.slice(~start=0, ~end_=Js.Array2.length(line))
 
 let isCursorFace = (face: KakouneTypes.Face.t) =>
   face.fg == "black" && (face.bg == "white" || face.bg == "cyan")
@@ -265,7 +262,7 @@ let initKak = (filenameOpt: option<string>) => {
   | Some(filename) => [ "-ui", "json", "-s", "vscode", filename ]
   | None => [ "-ui", "json", "-s", "vscode" ]
   }
-  let session = ClientSession.make(args)
+  let session = ClientSession.make("edit", args)
   editorSession.contents = session
   session
     ->ClientSession.setHandler(processCommand)

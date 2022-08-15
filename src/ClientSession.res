@@ -22,6 +22,7 @@ module InputBuffer = {
 }
 
 type t = {
+  id: string,
   args: array<string>,
   mutable childProcess: option<Node.child_process>,
   inputBuffer: InputBuffer.t,
@@ -35,7 +36,7 @@ let getPid = t => switch t.childProcess {
 }
 
 let handleIncomingBytes = (t, bytes) => {
-  Js.log4("Received from", t->getPid, Js.Array2.length(bytes), "bytes")
+  Js.log4("Received from", t.id, Js.Array2.length(bytes), "bytes")
   let str = Js.String2.fromCharCodeMany(bytes)
   t.inputBuffer->InputBuffer.push(str, msg => {
     t.pendingCommand.contents = t.pendingCommand.contents
@@ -53,12 +54,13 @@ let handleIncomingBytes = (t, bytes) => {
 let write = (t, s) => {
   let success = Belt.Option.getExn(t.childProcess).stdin.write(. s)
   switch success {
-  | true => Js.log4("Successfully wrote to", t->getPid, Js.String2.length(s), "chars")
+  | true => Js.log4("Successfully wrote to", t.id, Js.String2.length(s), "chars")
   | false => Js.log3("Failed writing", Js.String2.length(s), "chars")
   }
 }
 
-let make = (args) => {
+let make = (id, args) => {
+  id: id,
   args: args,
   childProcess: None,
   inputBuffer: InputBuffer.make(),
