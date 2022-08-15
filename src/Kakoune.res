@@ -34,6 +34,8 @@ let writeKeys = keys => {
   needSelectionsUpdate.contents = NeedUpdate
 }
 
+let configureAutoreload = () => writeKeysInternal(":set global autoreload yes<ret>")
+
 let querySelectionsKey = "<a-c-s-F12>"
 
 let querySelectionsCommand = ":evaluate-commands -client vscodeoutput echo kakoune-mode selections: %val{selections_char_desc}<ret>"
@@ -273,5 +275,6 @@ let initKak = (filenameOpt: option<string>) => {
     ->ClientSession.setHandler(processOutputSessionRequest)
     ->ignore
   writeToKak(Rpc.ResizeMessage.make())
+  configureAutoreload()
   configureQuerySelectionsMappings()
 }
