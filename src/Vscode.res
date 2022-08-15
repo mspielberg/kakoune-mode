@@ -148,6 +148,8 @@ module Range = {
   @module("vscode") @new
   external make: (~start: position, ~end: position) => range = "Range"
 
+  let emptyAtPosition = p => make(~start=p, ~end=p)
+
   let fromPosition = (t, s: string) =>
     make(~start=t, ~end=t->Position.advance(s))
 }
@@ -233,7 +235,7 @@ let setSelection = selection => {
   TextEditor.activeTextEditor()
   ->Belt.Option.forEach(ed => {
     ed->TextEditor.setSelection(selection)
-    ed->TextEditor.revealRange(selection->Selection.asRange)
+    ed->TextEditor.revealRange(selection.active->Range.emptyAtPosition)
   })
 }
 
@@ -241,7 +243,7 @@ let setSelections = selections => {
   switch TextEditor.activeTextEditor() {
   | Some(ed) =>
     ed->TextEditor.setSelections(selections)
-    ed->TextEditor.revealRange(selections[0]->Selection.asRange)
+    ed->TextEditor.revealRange(selections[0].active->Range.emptyAtPosition)
   | None => ()
   }
 }
