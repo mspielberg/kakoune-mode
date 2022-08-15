@@ -165,7 +165,7 @@ module KeysMessage = {
 }
 
 module ResizeMessage = {
-  let maxInt = Js.Int.max->Js.Int.toFloat->Js.Json.number
+  let maxInt = (Js.Int.max - 1)->Js.Int.toFloat->Js.Json.number
   let make = () => {
     {
       Message.method: "resize",
