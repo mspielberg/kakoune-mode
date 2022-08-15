@@ -85,15 +85,19 @@ let getSelectionsFromStatusLine = (statusLine: KakouneTypes.Line.t) => {
 }
 
 let getModeFromModeLine = (modeLine: KakouneTypes.Line.t) =>
-  switch modeLine[3].contents
-  {
-  | "insert" => Mode.Insert
-  | "enter key" => Mode.EnterKey
-  | "prompt" => Mode.Prompt
-  | s if Js.String2.includes(s, " sel") => Mode.Normal
-  | s => {
-      Js.log2("Unknown modeline entry:", s)
-      Mode.Unknown
+  if modeLine[4].contents == " param=" {
+    Mode.EnterParam
+  } else {
+    switch modeLine[3].contents
+    {
+    | "insert" => Mode.Insert
+    | "enter key" => Mode.EnterKey
+    | "prompt" => Mode.Prompt
+    | s if Js.String2.includes(s, " sel") => Mode.Normal
+    | s => {
+        Js.log2("Unknown modeline entry:", s)
+        Mode.Unknown
+      }
     }
   }
 
@@ -118,7 +122,8 @@ let processDrawStatus = (statusLine, modeLine) => {
   | Mode.Unknown
   | Mode.Normal
   | Mode.Insert
-  | Mode.EnterKey => ()
+  | Mode.EnterKey
+  | Mode.EnterParam => ()
   | Mode.Prompt => updatePrompt(statusLine)
   }
   Promise.resolve()

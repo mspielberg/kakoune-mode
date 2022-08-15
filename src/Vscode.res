@@ -191,6 +191,7 @@ let updateCursorStyle = (newMode: Mode.t) =>
   | Mode.Insert => setCursorStyle(TextEditor.Line)
   | Mode.Unknown
   | Mode.EnterKey
+  | Mode.EnterParam
   | Mode.Prompt => setCursorStyle(TextEditor.BlockOutline)
   }
 

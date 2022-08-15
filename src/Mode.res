@@ -4,6 +4,7 @@ type t =
   | Insert
   | EnterKey
   | Prompt
+  | EnterParam
 
 let mode = ref(Unknown)
 
