@@ -189,10 +189,9 @@ let processRefresh = () => switch needSelectionsUpdate.contents {
     ->Belt.Option.flatMap(mainSelection => {
       drawBuffer.contents[mainSelection.cursor.line]
         ->getCursorPositionFromLine
-        ->Belt.Option.map(column => {
-          let columnOffset = mainSelection.cursor.column - column
+        ->Belt.Option.map(columnInDrawBuffer => {
           drawBuffer.contents
-          ->trimLeft(columnOffset)
+          ->trimLeft(columnInDrawBuffer - mainSelection.cursor.column)
           ->Vscode.replaceAll
           ->Promise.thenResolve(_ =>
             currentSelections.contents
