@@ -251,4 +251,5 @@ let initKak = (filenameOpt: option<string>) => {
   outputSession
     ->ClientSession.setHandler(processOutputSessionRequest)
     ->ignore
+  writeToKak(Rpc.ResizeMessage.make())
 }
