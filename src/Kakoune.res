@@ -47,8 +47,8 @@ let getAtomStartColumns = (line: KakouneTypes.Line.t) => line->Js.Array2.reduce(
     if length(starts) == 0 {
       [(0, Js.String2.length(atom.contents))] // first atom starts at column 0
     } else {
-      let (prevStart, prevEnd) = starts[length(starts) - 1]
-      starts->push((prevStart + prevEnd, prevEnd + atom.contents->Js.String2.length))->ignore
+      let (_, prevEnd) = starts[length(starts) - 1]
+      starts->push((prevEnd, prevEnd + Js.String2.length(atom.contents)))->ignore
       starts
     }
   }, [])

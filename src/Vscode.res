@@ -83,6 +83,7 @@ module TextEditor = {
   @get external getSelections: t => array<selection> = "selections"
   @set external setSelections: (t, array<selection>) => unit = "selections"
   @send external edit: (t, editBuilder => unit, editOptions) => Promise.t<bool> = "edit"
+  @send external revealRange: (t, range) => unit = "revealRange"
 
   @send external replace: (editBuilder, selection, string) => unit = "replace"
 }
@@ -120,6 +121,11 @@ module Position = {
   let fromKakoune = (coord: KakouneTypes.Coord.t) => make(~line=coord.line, ~character=coord.column)
 }
 
+module Range = {
+  @module("vscode") @new
+  external make: (~start: position, ~end: position) => range = "Range"
+}
+
 module Selection = {
   type t = selection
 
@@ -140,6 +146,8 @@ module Selection = {
         ~anchor=selection.anchor->Position.fromKakoune,
         ~active=selection.cursor->Position.fromKakoune)
     }
+
+  let asRange = selection => Range.make(~start=selection.anchor, ~end=selection.active)
 }
 
 let createChannel = (context) => {
@@ -197,12 +205,17 @@ let updateCursorStyle = (newMode: Mode.t) =>
 
 let setSelection = selection => {
   TextEditor.activeTextEditor()
-  ->Belt.Option.forEach(ed => ed->TextEditor.setSelection(selection))
+  ->Belt.Option.forEach(ed => {
+    ed->TextEditor.setSelection(selection)
+    ed->TextEditor.revealRange(selection->Selection.asRange)
+  })
 }
 
 let setSelections = selections => {
   switch TextEditor.activeTextEditor() {
-  | Some(ed) => ed->TextEditor.setSelections(selections)
+  | Some(ed) =>
+    ed->TextEditor.setSelections(selections)
+    ed->TextEditor.revealRange(selections[0]->Selection.asRange)
   | None => ()
   }
 }
