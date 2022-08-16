@@ -181,6 +181,19 @@ let processInfoShow = (title, content, infoStyle) => {
   Promise.resolve()
 }
 
+let processMenuHide = () => Promise.resolve()
+
+let processMenuShow = (items, style) => switch style {
+| #prompt =>
+  items
+  ->Js.Array2.slice(~start=0, ~end_=10)
+  ->Js.Array2.map(KakouneTypes.Line.getText)
+  ->Vscode.setPromptItems
+  Promise.resolve()
+| #inline =>
+  Promise.resolve()
+}
+
 let trimLeft = (lines, n) => {
   lines
   ->Js.Array2.map(line =>
@@ -243,6 +256,9 @@ let processCommand = (req: Rpc.UIRequest.t) => switch req {
 | InfoHide => processInfoHide()
 | InfoShow({title: title, content: content, style: style}) =>
   processInfoShow(title, content, style)
+| MenuHide => processMenuHide()
+| MenuShow({items: items, style: style}) =>
+  processMenuShow(items, style)
 | Refresh =>
   processRefresh()
 | SetCursor({mode: mode, coord: coord}) =>

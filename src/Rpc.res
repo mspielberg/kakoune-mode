@@ -26,6 +26,7 @@ module Message = {
 
 module UIRequest = {
   open KakouneTypes
+
   @deriving(jsConverter)
   type infoStyle = [
     | #prompt
@@ -35,11 +36,20 @@ module UIRequest = {
     | #menuDoc
     | #modal
   ]
+
+  @deriving(jsConverter)
+  type menuStyle = [
+    | #prompt
+    | #inline
+  ]
+
   type t =
     |Draw({lines: array<Line.t>, defaultFace: Face.t, paddingFace: Face.t})
     |DrawStatus({statusLine: Line.t, modeLine: Line.t, defaultFace: Face.t})
     |InfoShow({title: Line.t, content: array<Line.t>, anchor: Coord.t, face: Face.t, style: infoStyle})
     |InfoHide
+    |MenuShow({items: array<Line.t>, anchor: Coord.t, selectedItemFace: Face.t, menuFace: Face.t, style: menuStyle})
+    |MenuHide
     |Refresh
     |SetCursor({mode: string, coord: Coord.t})
 
@@ -132,6 +142,14 @@ module UIRequest = {
       style: params[4]->string->infoStyleFromJs->getExn,
     })
 
+    let menuShow = params => MenuShow({
+      items: params[0]->array(line),
+      anchor: params[1]->coord,
+      selectedItemFace: params[2]->face,
+      menuFace: params[3]->face,
+      style: params[4]->string->menuStyleFromJs->getExn,
+    })
+
     let setCursor = params => SetCursor({
       mode: params[0]->string,
       coord: params[1]->coord,
@@ -145,9 +163,11 @@ module UIRequest = {
     let decoder = switch msg.method {
     | "draw" => Some(draw)
     | "draw_status" => Some(drawStatus)
-    | "info_hide" => Some((_) => InfoHide)
+    | "info_hide" => Some(_ => InfoHide)
     | "info_show" => Some(infoShow)
-    | "refresh" => Some((_) => Refresh)
+    | "menu_show" => Some(menuShow)
+    | "menu_hide" => Some(_ => MenuHide)
+    | "refresh" => Some(_ => Refresh)
     | "set_cursor" => Some(setCursor)
     | _ => None
     }

@@ -26,8 +26,9 @@ module OutputChannel = {
 
 module QuickPick = {
   type quickPickItem = {
+    "alwaysShow": option<bool>,
     "label": string,
-    "description": string,
+    "description": option<string>,
   }
 
   type t = {
@@ -318,9 +319,8 @@ let showEnterKeyPrompt = (title, options, writeKeys) => {
   open QuickPick
   let prompt = make()
   prompt->setPlaceholder(title)
-  prompt->setItems(Js.Array2.map(
-    options,
-    ((key, description)) => { "label": key, "description": description }))
+  prompt->setItems(Js.Array2.map(options, ((key, description)) =>
+    { "alwaysShow": None, "label": key, "description": Some(description) }))
 
   prompt->onDidAccept(() => {
     let activeItems = prompt.activeItems
@@ -347,6 +347,14 @@ let showEnterKeyPrompt = (title, options, writeKeys) => {
   hidePrompt()
   activePrompt.contents = Some(prompt)
   prompt->show
+}
+
+let setPromptItems = (items: array<string>) => switch activePrompt.contents {
+| None => ()
+| Some(prompt) =>
+  items
+  ->Js.Array2.map(s => {"alwaysShow": Some(true), "label": s, "description": None})
+  ->QuickPick.setItems(prompt, _)
 }
 
 let showPrompt = (title, value, writeKeys) => {
