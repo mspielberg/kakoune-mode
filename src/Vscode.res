@@ -357,6 +357,8 @@ let setPromptItems = (items: array<string>) => switch activePrompt.contents {
   ->QuickPick.setItems(prompt, _)
 }
 
+let sendPromptTimeoutId: ref<option<Js.Global.timeoutId>> = ref(None)
+
 let showPrompt = (title, value, writeKeys) => {
   open Belt.Option
   open QuickPick
@@ -367,8 +369,12 @@ let showPrompt = (title, value, writeKeys) => {
       hidePrompt()
       writeKeys("<ret>")
     })
-    prompt->onDidChangeValue(newValue => writeKeys(
-      "<c-u>" ++ Js.String2.replaceByRe(newValue, %re("/</g"), "<lt>")))
+    prompt->onDidChangeValue(newValue => {
+      sendPromptTimeoutId.contents->forEach(Js.Global.clearTimeout)
+      sendPromptTimeoutId.contents = Some(Js.Global.setTimeout(() =>
+        writeKeys("<c-u>" ++ Js.String2.replaceByRe(newValue, %re("/</g"), "<lt>")),
+        100))
+    })
     prompt->onDidHide(() => {
       if isSome(activePrompt.contents) {
         activePrompt.contents = None
